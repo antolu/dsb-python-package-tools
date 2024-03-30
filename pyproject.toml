@@ -44,11 +44,14 @@ build-backend = "setuptools.build_meta"
 write_to = "dsb_package_tools/_version.py"
 local_scheme = "no-local-version"
 
+
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"], content-type = "text/markdown" }
 
-[tool.setuptools]
-packages = ["dsb_package_tools"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dsb_package_tools*"]
+namespaces = false
 
 [project.scripts]
 # project endpoints here
