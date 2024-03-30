@@ -91,7 +91,9 @@ def hijack_module_name_replacement() -> None:
     for mod_name in list(sys.modules):
         if mod_name == "dsb_package_tools._mod_replace":
             continue
-        if mod_name == "dsb_package_tools" or mod_name.startswith("dsb_package_tools."):
+        if mod_name == "dsb_package_tools" or mod_name.startswith(
+            "dsb_package_tools."
+        ):
             del sys.modules[mod_name]
 
     dsb_package_tools._mod_replace.replace_modname = lambda *_: None
