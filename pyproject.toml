@@ -1,0 +1,121 @@
+[project]
+name = "dsb-package-tools"
+dynamic = ["version", "readme"]
+description = "Python development tools for BE-CSS-DSB"
+license = { text = "Other/Proprietary License" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: Other/Proprietary License",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+requires-python = "~=3.11"
+dependencies = [
+    "tomlkit >= 0.12, < 1.0",
+]
+
+[[project.authors]]
+name = "Anton Lu"
+email = "anton.lu@cern.ch"
+
+[project.urls]
+homepage = "https://gitlab.cern.ch/dsb/devops/package-tools"
+documentation = "https://acc-py.web.cern.ch/gitlab/dsb/devops/package-tools/docs/stable/"
+repository = "https://gitlab.cern.ch/dsb/devops/package-tools"
+changelog = "https://gitlab.cern.ch/dsb/devops/package-tools/-/releases"
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-cov"]
+doc = ["acc-py-sphinx", "myst-parser", "sphinx-copybutton"]
+dev = ["pre-commit", "ruff", "mypy"]
+
+[build-system]
+requires = ["setuptools >= 61", "setuptools-scm[toml] ~= 6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# keep this for dynamic versioning
+[tool.setuptools_scm]
+write_to = "dsb_package_tools/_version.py"
+local_scheme = "no-local-version"
+
+[tool.setuptools.dynamic]
+readme = { file = ["README.md"], content-type = "text/markdown" }
+
+[tool.setuptools]
+packages = ["dsb_package_tools"]
+
+[project.scripts]
+# project endpoints here
+
+[tool.black]
+target-version = ["py311"]
+line-length = 79
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    ".venv",
+]
+
+line-length = 79
+target-version = "py311"
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+ignore = ["E501"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.mypy]
+disallow_untyped_defs = true
+plugins = "numpy.typing.mypy_plugin"
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.*"]
+ignore_missing_imports = true
+
+# for pyright LSP
+[tool.pyright]
+reportPrivateImportUsage = "none"
