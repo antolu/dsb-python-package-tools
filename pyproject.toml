@@ -51,7 +51,14 @@ readme = { file = ["README.md"], content-type = "text/markdown" }
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["dsb_package_tools*"]
+exclude = ["dsb_package_tools.templates*"]
 namespaces = false
+
+[tool.setuptools.package-data]
+dsb_package_tools = ["py.typed"]
+
+[tool.setuptools]
+include-package-data = true
 
 [project.scripts]
 # project endpoints here

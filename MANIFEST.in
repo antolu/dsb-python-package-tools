@@ -1,0 +1,2 @@
+recursive-include dsb_package_tools/templates/ **
+exclude dsb_package_tools/templates/.git
