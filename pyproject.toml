@@ -18,6 +18,7 @@ classifiers = [
 requires-python = "~=3.11"
 dependencies = [
     "tomlkit >= 0.12, < 1.0",
+    "survey >= 5.0, < 6.0",
 ]
 
 [[project.authors]]
@@ -61,7 +62,7 @@ dsb_package_tools = ["py.typed"]
 include-package-data = true
 
 [project.scripts]
-# project endpoints here
+dsb-pkginit = "dsb_package_tools.pkginit.__main__:main"
 
 [tool.black]
 target-version = ["py311"]
