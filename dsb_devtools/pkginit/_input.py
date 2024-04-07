@@ -19,7 +19,7 @@ _EMAIL_REGEX = re.compile(
 _REPO_REGEX = re.compile(
     r"^(?P<protocol>ssh://(git@)?|https://)gitlab.cern.ch(:\d+)?/"
     r"(?P<namespace>(([\w\-_]+/)*([\w\-_]+)))/"
-    r"(?P<reponame>[\w\-_]+)(.git)?$"
+    r"(?P<reponame>[\w\-_]+)(.git)$"
 )
 _GITLAB_HTTPS_STEM = "https://gitlab.cern.ch/{namespace}/{reponame}"
 _ACC_PY_DOCS_STEM = (
