@@ -6,7 +6,7 @@ import typing
 
 import sphinx.util.logging
 
-import dsb_package_tools
+import dsb_devtools
 
 if typing.TYPE_CHECKING:
     import sphinx.application
@@ -14,7 +14,7 @@ if typing.TYPE_CHECKING:
 
 project = "dsb-package-tools"
 author = "Anton Lu"
-version = dsb_package_tools.__version__
+version = dsb_devtools.__version__
 
 copyright = "{0}, CERN".format(datetime.datetime.now().year)
 
@@ -86,17 +86,15 @@ def hijack_module_name_replacement() -> None:
     # Working in sphinx environment, not replacing due to
     # https://github.com/sphinx-doc/sphinx/issues/11031
     logger.info("Disabling __module__ rewrite")
-    import dsb_package_tools._mod_replace
+    import dsb_devtools._mod_replace
 
     for mod_name in list(sys.modules):
-        if mod_name == "dsb_package_tools._mod_replace":
+        if mod_name == "dsb_devtools._mod_replace":
             continue
-        if mod_name == "dsb_package_tools" or mod_name.startswith(
-            "dsb_package_tools."
-        ):
+        if mod_name == "dsb_devtools" or mod_name.startswith("dsb_devtools."):
             del sys.modules[mod_name]
 
-    dsb_package_tools._mod_replace.replace_modname = lambda *_: None
+    dsb_devtools._mod_replace.replace_modname = lambda *_: None
 
 
 hijack_module_name_replacement()

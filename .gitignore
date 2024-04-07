@@ -1,4 +1,4 @@
-dsb_package_tools/_version.py
+dsb_devtools/_version.py
 
 # torch
 lightning_logs/

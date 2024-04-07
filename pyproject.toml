@@ -1,5 +1,5 @@
 [project]
-name = "dsb-package-tools"
+name = "dsb-devtools"
 dynamic = ["version", "readme"]
 description = "Python development tools for BE-CSS-DSB"
 license = { text = "Other/Proprietary License" }
@@ -26,10 +26,10 @@ name = "Anton Lu"
 email = "anton.lu@cern.ch"
 
 [project.urls]
-homepage = "https://gitlab.cern.ch/dsb/devops/package-tools"
-documentation = "https://acc-py.web.cern.ch/gitlab/dsb/devops/package-tools/docs/stable/"
-repository = "https://gitlab.cern.ch/dsb/devops/package-tools"
-changelog = "https://gitlab.cern.ch/dsb/devops/package-tools/-/releases"
+homepage = "https://gitlab.cern.ch/dsb/devops/devtools"
+documentation = "https://acc-py.web.cern.ch/gitlab/dsb/devops/devtools/docs/stable/"
+repository = "https://gitlab.cern.ch/dsb/devops/devtools"
+changelog = "https://gitlab.cern.ch/dsb/devops/devtools/-/releases"
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov"]
@@ -51,18 +51,18 @@ readme = { file = ["README.md"], content-type = "text/markdown" }
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["dsb_package_tools*"]
-exclude = ["dsb_package_tools.templates*"]
+include = ["dsb_devtools*"]
+exclude = ["dsb_devtools.templates*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-dsb_package_tools = ["py.typed"]
+dsb_devtools = ["py.typed"]
 
 [tool.setuptools]
 include-package-data = true
 
 [project.scripts]
-dsb-pkginit = "dsb_package_tools.pkginit.__main__:main"
+dsb-pkginit = "dsb_devtools.pkginit.__main__:main"
 
 [tool.black]
 target-version = ["py311"]

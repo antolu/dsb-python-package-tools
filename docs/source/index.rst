@@ -8,7 +8,7 @@ Using the `acc-py Python package index
 <https://wikis.cern.ch/display/ACCPY/Getting+started+with+acc-python#Gettingstartedwithacc-python-OurPythonPackageRepositoryrepo>`_
 , ``dsb-package-tools`` can be pip installed with::
 
-   pip install dsb-package-tools
+   pip install dsb-devtools
 
 
 Documentation contents
@@ -21,7 +21,7 @@ Documentation contents
     self
 
 .. toctree::
-    :caption: dsb-package-tools
+    :caption: dsb-devtools
     :maxdepth: 1
 
     usage

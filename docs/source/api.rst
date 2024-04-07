@@ -1,6 +1,6 @@
 .. _API_docs:
 
-dsb-package-tools API documentation
+dsb-devtools API documentation
 ===========================
 
 .. rubric:: Modules
@@ -10,4 +10,5 @@ dsb-package-tools API documentation
 
    .. Add the sub-packages that you wish to document below
 
-   dsb_package_tools
+   dsb_devtools
+   dsb_devtools.pkginit
