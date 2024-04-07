@@ -19,6 +19,7 @@ requires-python = "~=3.11"
 dependencies = [
     "tomlkit >= 0.12, < 1.0",
     "survey >= 5.0, < 6.0",
+    "ruamel.yaml >= 0.18, < 1.0",
 ]
 
 [[project.authors]]
@@ -42,7 +43,7 @@ build-backend = "setuptools.build_meta"
 
 # keep this for dynamic versioning
 [tool.setuptools_scm]
-write_to = "dsb_package_tools/_version.py"
+write_to = "dsb_devtools/_version.py"
 local_scheme = "no-local-version"
 
 
