@@ -522,7 +522,8 @@ def _maybe_read_package_name(
     reponame_hint = reponame_hint or config.package_name
     if config.package_name == "" or force:
 
-        def validate_package_name(name: str) -> None: ...
+        def validate_package_name(name: str) -> None:
+            ...
 
         package_name = routines.input(
             "What is the package name? ",
@@ -539,7 +540,8 @@ def _maybe_read_package_module(
 ) -> TemplateConfig:
     if config.package_module == "" or force:
 
-        def validate_package_module(name: str) -> None: ...
+        def validate_package_module(name: str) -> None:
+            ...
 
         default = config.package_name.replace("-", "_")
 

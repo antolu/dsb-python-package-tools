@@ -1,17 +1,18 @@
 from __future__ import annotations
-import typing
+
+import os
 import pathlib
 import shutil
+import subprocess
 import sys
 import tempfile
-import subprocess
-import ruamel.yaml
-import os
-import rich
 import traceback
-from survey import routines
+import typing
 
+import rich
+import ruamel.yaml
 import tomlkit
+from survey import routines
 
 from ._input import (
     TemplateConfig,
