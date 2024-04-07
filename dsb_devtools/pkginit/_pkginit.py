@@ -1,6 +1,5 @@
 from __future__ import annotations
 import typing
-import io
 import pathlib
 import shutil
 import sys
@@ -10,6 +9,7 @@ import ruamel.yaml
 import os
 import rich
 import traceback
+from survey import routines
 
 import tomlkit
 
@@ -62,6 +62,7 @@ def main(argv: list[str] | None = None) -> None:
             print_failure(str(e))
             sys.exit(1)
 
+    print()
     try:
         pkginit(config)
     except Exception as e:  # noqa: F722
@@ -100,7 +101,10 @@ def pkginit(config: TemplateConfig) -> None:
     if config.use_docs:
         shutil.copytree(TEMPLATE_DIR / "docs", tmp_dir / "docs")
         _edit_docs(
-            tmp_dir / "docs", config.package_name, config.package_module
+            tmp_dir / "docs",
+            config.package_name,
+            config.package_module,
+            config.author_name,
         )
 
     if config.use_tests:
@@ -147,6 +151,14 @@ def pkginit(config: TemplateConfig) -> None:
     shutil.rmtree(dest_dir, ignore_errors=True)
     shutil.copytree(tmp_dir, dest_dir)
     tmp_file.cleanup()
+
+    chdir = routines.inquire("Chdir to package directory? ")
+    if chdir:
+        os.chdir(dest_dir)
+        print_success(f"Changed directory to {dest_dir}")
+        print(
+            "Run `pip install -e . --config-settings editable_mode=compat` to get started"
+        )
 
 
 def _edit_gitignore(gitignore_path: pathlib.Path, package_module: str) -> None:
@@ -250,12 +262,19 @@ def _replace_in_file(
 
 
 def _edit_docs(
-    docs_root: pathlib.Path, package_name: str, package_module: str
+    docs_root: pathlib.Path,
+    package_name: str,
+    package_module: str,
+    author_name: str,
 ) -> None:
     docs_root = docs_root / "source"
     _replace_in_file(
         docs_root / "conf.py",
-        {"package_name": package_module, "package-name": package_name},
+        {
+            "package_name": package_module,
+            "package-name": package_name,
+            "author = Anton Lu": f'author = "{author_name}"',
+        },
     )
     _replace_in_file(
         docs_root / "api.rst",
