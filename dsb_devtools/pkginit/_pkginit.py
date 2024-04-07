@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing
+import io
 import pathlib
 import shutil
 import sys
@@ -7,6 +8,8 @@ import tempfile
 import subprocess
 import ruamel.yaml
 import os
+import rich
+import traceback
 
 import tomlkit
 
@@ -25,6 +28,18 @@ from ._input import (
 TEMPLATE_DIR = pathlib.Path(__file__).parent.parent / "templates"
 
 
+def print_success(msg: str) -> None:
+    rich.print(f"[bold green]✓[/bold green] {msg}")
+
+
+def print_in_progress(msg: str) -> None:
+    rich.print(f"[bold blue].[/bold blue] {msg}")
+
+
+def print_failure(msg: str) -> None:
+    rich.print(f"[bold red]✗[/bold red] {msg}")
+
+
 def main(argv: list[str] | None = None) -> None:
     # make welcome screen, CTRL+C to exit
     argv = argv or sys.argv[1:]
@@ -38,17 +53,22 @@ def main(argv: list[str] | None = None) -> None:
             if not confirm_input(config):
                 config = ask_specific_input(config)
         except KeyboardInterrupt:
-            print("\nRead CTRL+C")
-            return
+            print_success("\nRead CTRL+C")
+            sys.exit(0)
     else:
         try:
             assert_input_valid(config)
         except AssertionError as e:
-            print(e)
+            print_failure(str(e))
+            sys.exit(1)
 
-    pkginit(config)
-
-    print(config)
+    try:
+        pkginit(config)
+    except Exception as e:  # noqa: F722
+        print_failure(
+            f"Failed to initialize package: {e}\n{traceback.format_exc()}"
+        )
+        sys.exit(1)
 
 
 def pkginit(config: TemplateConfig) -> None:
@@ -104,12 +124,14 @@ def pkginit(config: TemplateConfig) -> None:
         try:
             _setup_vcs(tmp_dir, config.package_url)
         except RuntimeError as e:
-            print(
+            print_failure(
                 "Failed to setup git repository. "
                 "Please run `git init` in the repository directory"
                 "to initialize the repository manually.\n"
                 f"Error: {e}"
             )
+    else:
+        print_success("Skipping git setup as package_url is 'bare'")
 
     if config.use_precommit:
         try:
@@ -124,12 +146,12 @@ def pkginit(config: TemplateConfig) -> None:
 
     shutil.rmtree(dest_dir, ignore_errors=True)
     shutil.copytree(tmp_dir, dest_dir)
-    # tmp_file.cleanup()
+    tmp_file.cleanup()
 
 
 def _edit_gitignore(gitignore_path: pathlib.Path, package_module: str) -> None:
-    print("Hooking you up with a cool .gitignore...")
     _replace_in_file(gitignore_path, package_name=package_module)
+    print_success(f"Added {package_module}/_version.py to .gitignore")
 
 
 def _make_readme(
@@ -138,7 +160,6 @@ def _make_readme(
     package_description: str | None = None,
     docs_url: str | None = None,
 ) -> None:
-    print("Making README.md...")
     if isinstance(package_name, TemplateConfig):
         package_name_s = package_name.package_name
         package_description = package_name.package_description
@@ -162,11 +183,17 @@ def _make_readme(
                 f"\n\nDocumentation available at [Acc-Py docserver]({docs_url})"
             )
 
+    if docs_url:
+        print_success(
+            "README.md is all set with package name, description and docs link"
+        )
+    else:
+        print_success("README.md is all set with package name and description")
+
 
 def _edit_pyproject(
     pyproject_path: pathlib.Path, config: TemplateConfig
 ) -> None:
-    print("Editing pyproject.toml")
     with open(pyproject_path, "r") as f:
         toml = tomlkit.loads(f.read())
 
@@ -200,6 +227,8 @@ def _edit_pyproject(
     with open(pyproject_path, "w") as f:
         f.write(tomlkit.dumps(toml))
 
+    print_success("pyproject.toml is all good!")
+
 
 def _replace_in_file(
     file_path: pathlib.Path,
@@ -223,7 +252,6 @@ def _replace_in_file(
 def _edit_docs(
     docs_root: pathlib.Path, package_name: str, package_module: str
 ) -> None:
-    print("Prettying up the docs...")
     docs_root = docs_root / "source"
     _replace_in_file(
         docs_root / "conf.py",
@@ -238,12 +266,15 @@ def _edit_docs(
         {"package-name": package_name},
     )
 
+    msg = "Injected package name into "
+    msg += "docs/source/{conf.py,api.rst,index.rst}."
+    print_success(msg)
+
 
 def _edit_gitlab_ci(
     gitlab_ci_conf_path: pathlib.Path,
     config: TemplateConfig,
 ) -> None:
-    print("Setting up CI pipeline")
     yaml = ruamel.yaml.YAML(typ="rt")
     with open(gitlab_ci_conf_path, "r") as f:
         ci_conf = yaml.load(f)
@@ -276,34 +307,63 @@ def _edit_gitlab_ci(
     with open(gitlab_ci_conf_path, "w") as f:
         yaml.dump(ci_conf, f)
 
+    msg = "CI pipeline set up with: "
+    if config.use_docs:
+        msg += "docs build & release, "
+    if config.use_precommit:
+        msg += "pre-commit hooks, "
+    if config.use_tests:
+        msg += "dev and wheel tests, "
+    if config.use_java:
+        msg += "acc-py_cc7_openjdk11_ci base image, "
+    msg = msg[:-2] + "."
+    print_success(msg)
+
 
 def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
     cwd = pathlib.Path.cwd()
     os.chdir(repo_dir)
 
-    print("Setting up git repository...")
-
     try:
         command = ["git", "init"]
 
-        output = subprocess.run(command, check=True, cwd=repo_dir)
-        if output.returncode != 0:
-            raise RuntimeError("Failed to initialize git repository")
+        run_command(
+            command, repo_dir, "Failed to initialize git repository:\n"
+        )
+        print_success("Initialized git repository in the package directory")
 
         command = ["git", "remote", "add", "origin", repo_url]
-        output = subprocess.run(command, check=True, cwd=repo_dir)
-        if output.returncode != 0:
-            raise RuntimeError("Failed to add remote origin")
+        run_command(command, repo_dir, "Failed to add remote origin\n")
+        print_success(f"Pointed origin to {repo_url}")
 
         # checkout master branch and set it as default
         command = ["git", "branch", "-M", "master"]
-        output = subprocess.run(command, check=True, cwd=repo_dir)
-        if output.returncode != 0:
-            raise RuntimeError("Failed to set master branch as default branch")
+        run_command(
+            command,
+            repo_dir,
+            "Failed to set master branch as default branch:\n",
+        )
+        print_success("Set default branch to master")
     except Exception as e:  # noqa: F722
         raise e
     finally:
         os.chdir(cwd)
+
+
+def run_command(
+    command: list[str], cwd: pathlib.Path, error_msg: str | None
+) -> None:
+    output = subprocess.run(
+        command,
+        check=True,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    if output.returncode != 0:
+        raise RuntimeError(
+            (error_msg or "Failed to run command: \n") + output.stdout.decode()
+        )
 
 
 def _setup_precommit(repo_dir: pathlib.Path) -> None:
@@ -314,17 +374,18 @@ def _setup_precommit(repo_dir: pathlib.Path) -> None:
     # check if pre-commit is installed
     try:
         command = ["pre-commit", "--version"]
-        subprocess.run(command, check=True, cwd=repo_dir)
+        run_command(
+            command, repo_dir, "Failed to check existence of pre-commit:\n"
+        )
     except FileNotFoundError:
-        print("pre-commit not found, installing...")
+        print_in_progress("pre-commit not found, installing...")
         command = ["pip", "install", "pre-commit"]
-        output = subprocess.run(command, check=True, cwd=repo_dir)
-        if output.returncode != 0:
-            raise RuntimeError("Failed to install pre-commit")
+        run_command(command, repo_dir, "Failed to install pre-commit:\n")
 
     command = ["pre-commit", "install"]
-    output = subprocess.run(command, check=True, cwd=repo_dir)
-    if output.returncode != 0:
-        raise RuntimeError("Failed to install pre-commit hooks")
+    run_command(command, repo_dir, "Failed to install pre-commit hooks:\n")
+    print_success(
+        "Installed pre-commit hooks. Use `pre-commit run` to test run them."
+    )
 
     os.chdir(cwd)

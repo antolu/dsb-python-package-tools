@@ -63,7 +63,7 @@ class TemplateConfig:
         writer = io.StringIO()
 
         table = rich.table.Table(
-            title="Current configuration", show_header=False
+            title="Package init configuration", show_header=False
         )
 
         table.add_column("Name", style="bold")
@@ -570,7 +570,7 @@ def _maybe_ask_package_description(
             if remain < 0:
                 return "+{0}".format(str(-remain))
             else:
-                return str(remain)
+                return "{:2d}".format(remain)
 
         def validate_package_description(description: str) -> None:
             if len(description) < limit:
