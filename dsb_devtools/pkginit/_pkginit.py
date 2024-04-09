@@ -11,6 +11,7 @@ import traceback
 import typing
 
 import rich
+import rich.console
 import ruamel.yaml
 import tomlkit
 
@@ -30,6 +31,19 @@ from ._input import (
 TEMPLATE_DIR = pathlib.Path(__file__).parent.parent / "templates"
 
 
+BANNER = r"""
+
+
+██████  ███████ ██████      ██████  ██   ██  ██████  ██ ███    ██ ██ ████████
+██   ██ ██      ██   ██     ██   ██ ██  ██  ██       ██ ████   ██ ██    ██
+██   ██ ███████ ██████      ██████  █████   ██   ███ ██ ██ ██  ██ ██    ██
+██   ██      ██ ██   ██     ██      ██  ██  ██    ██ ██ ██  ██ ██ ██    ██
+██████  ███████ ██████      ██      ██   ██  ██████  ██ ██   ████ ██    ██
+
+
+"""
+
+
 def print_success(msg: str) -> None:
     rich.print(f"[bold green]✓[/bold green] {msg}")
 
@@ -40,6 +54,10 @@ def print_in_progress(msg: str) -> None:
 
 def print_failure(msg: str) -> None:
     rich.print(f"[bold red]✗[/bold red] {msg}")
+
+
+def print_banner() -> None:
+    print(BANNER)
 
 
 def main(
@@ -53,6 +71,9 @@ def main(
         argv = argv or sys.argv[1:]
 
         config = parse_args(argv, parser)
+
+    os.system("clear")
+    print_banner()
 
     if not config.no_confirm:
         try:

@@ -226,7 +226,6 @@ def read_input(config: TemplateConfig, force: bool = False) -> TemplateConfig:
     TemplateConfig
         The updated configuration.
     """
-    os.system("clear")
     reponame_hint = ""
     _, reponame_hint = _maybe_ask_repo_url(config, force=True)
 
