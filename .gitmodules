@@ -4,3 +4,5 @@
     url = https://python-package-template:$TEMPLATE_ACCESS_TOKEN@gitlab.cern.ch/dsb/devops/python-package-template.git
 [includeIf "gitdir:/builds/dsb/devops/devtools/"]
     path = .templates.gitmodules
+[credential]
+helper = "!f() { echo 'username=python-package-template'; echo 'password=$TEMPLATE_ACCESS_TOKEN'; }; f"
