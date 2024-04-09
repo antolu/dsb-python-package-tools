@@ -91,10 +91,13 @@ class TemplateConfig:
         return writer.getvalue()
 
 
-def parse_args(argv: list[str]) -> TemplateConfig:
-    parser = argparse.ArgumentParser(
+def make_parser(
+    main_parser: argparse.ArgumentParser | None = None,
+) -> argparse.ArgumentParser:
+    parser = main_parser or argparse.ArgumentParser(
         description="Initialize a Python package with a template."
     )
+
     parser.add_argument(
         "--package-name",
         dest="package_name",
@@ -177,8 +180,19 @@ def parse_args(argv: list[str]) -> TemplateConfig:
         help="Do not ask for confirmation.",
     )
 
+    return parser
+
+
+def parse_args(
+    argv: list[str], parser: argparse.ArgumentParser | None = None
+) -> TemplateConfig:
+    parser = make_parser(main_parser=parser)
     args = parser.parse_args(argv)
 
+    return create_config(args)
+
+
+def create_config(args: argparse.Namespace) -> TemplateConfig:
     return TemplateConfig(
         author_name=args.author,
         author_email=args.email,

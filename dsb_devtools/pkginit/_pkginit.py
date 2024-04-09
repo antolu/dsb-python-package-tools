@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import argparse
 import shutil
 import subprocess
 import sys
@@ -12,13 +13,13 @@ import typing
 import rich
 import ruamel.yaml
 import tomlkit
-from survey import routines
 
 from ._input import (
     TemplateConfig,
     ask_specific_input,
     assert_input_valid,
     confirm_input,
+    create_config,
     parse_args,
     read_input,
     resolve_changelog_url,
@@ -41,11 +42,17 @@ def print_failure(msg: str) -> None:
     rich.print(f"[bold red]✗[/bold red] {msg}")
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(
+    argv: list[str] | argparse.Namespace | None = None,
+    parser: argparse.ArgumentParser | None = None,
+) -> None:
     # make welcome screen, CTRL+C to exit
-    argv = argv or sys.argv[1:]
+    if isinstance(argv, argparse.Namespace):
+        config = create_config(argv)
+    else:
+        argv = argv or sys.argv[1:]
 
-    config = parse_args(argv)
+        config = parse_args(argv, parser)
 
     if not config.no_confirm:
         try:
@@ -153,13 +160,9 @@ def pkginit(config: TemplateConfig) -> None:
     shutil.copytree(tmp_dir, dest_dir)
     tmp_file.cleanup()
 
-    chdir = routines.inquire("Chdir to package directory? ")
-    if chdir:
-        os.chdir(dest_dir)
-        print_success(f"Changed directory to {dest_dir}")
-        print(
-            "Run `pip install -e . --config-settings editable_mode=compat` to get started"
-        )
+    print(
+        "Run `pip install -e . --config-settings editable_mode=compat` to get started"
+    )
 
 
 def _edit_gitignore(gitignore_path: pathlib.Path, package_module: str) -> None:
@@ -216,7 +219,7 @@ def _edit_pyproject(
     toml["project"]["authors"][0]["email"] = config.author_email  # type: ignore[index]
 
     if config.package_url != "bare":
-        toml["project"]["urls"]["homepage"] = config.package_url  # type: ignore[index]
+        toml["project"]["urls"]["homepage"] = resolve_git_url(config)  # type: ignore[index]
         toml["project"]["urls"]["repository"] = resolve_git_url(  # type: ignore[index]
             config
         )
@@ -227,7 +230,7 @@ def _edit_pyproject(
 
     toml["tool"]["setuptools_scm"][  # type: ignore[index]
         "write_to"
-    ] = f"{config.package_module}/__init__.py"  # noqa: E501
+    ] = f"{config.package_module}/_version.py"  # noqa: E501
 
     toml["tool"]["setuptools"]["packages"]["find"]["include"] = [  # type: ignore[index]
         f"{config.package_module}*",
