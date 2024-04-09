@@ -1,7 +1,7 @@
 [submodule "templates"]
 	path = dsb_devtools/templates
     ; url = ssh://git@gitlab.cern.ch:7999/dsb/devops/python-package-template.git
-    url = https://python-package-template:$TEMPLATE_ACCESS_TOKEN@gitlab.cern.ch/dsb/devops/python-package-template.git
+    url = https://gitlab.cern.ch/dsb/devops/python-package-template.git
 [includeIf "gitdir:/builds/dsb/devops/devtools/"]
     path = .templates.gitmodules
 [credential]
