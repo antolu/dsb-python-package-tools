@@ -316,7 +316,7 @@ def ask_specific_input(config: TemplateConfig) -> TemplateConfig:  # noqa: PLR09
             f"Include CI: {'Yes' if config.use_ci else 'No'}",
         ]
         if config.use_ci:
-            selections.append(f"Use Java CI: {'Yes' if config.use_java else 'No'}")
+            selections.append(f"Use CI image with JDK: {'Yes' if config.use_java else 'No'}")
 
         return selections
 

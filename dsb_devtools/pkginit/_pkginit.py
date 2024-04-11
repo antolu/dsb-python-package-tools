@@ -158,7 +158,7 @@ def pkginit(config: TemplateConfig) -> None:
             print_failure(
                 "Failed to setup git repository. "
                 "Please run `git init` in the repository directory"
-                "to initialize the repository manually.\n"
+                "to initialize the repository manually.\n\n"
                 f"Error: {e}"
             )
     else:
@@ -215,6 +215,7 @@ def _make_readme(
 
         if docs_url:
             f.write(f"\n\nDocumentation available at [Acc-Py docserver]({docs_url})")
+        f.write("\n")
 
     if docs_url:
         print_success(
@@ -376,8 +377,26 @@ def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
         )
         print_success("Set default branch to master")
 
+        # add all files to staging area
+        command = ["git", "add", "."]
+        run_command(
+            command,
+            repo_dir,
+            "Failed to add all files to staging area:\n",
+        )
+        print_success("Added all files to staging area")
+
+        # commit all files
+        command = ["git", "commit", "-m", "Initial commit"]
+        run_command(
+            command,
+            repo_dir,
+            "Failed to commit all files:\n",
+        )
+        print_success("Committed all files as initial commit")
+
         # track remote master branch
-        command = ["git", "branch", "--set-upstream-to=origin/master", "master"]
+        command = ["git", "branch", "--track", "origin/master"]
         run_command(
             command,
             repo_dir,
@@ -389,16 +408,21 @@ def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
 
 
 def run_command(command: list[str], cwd: pathlib.Path, error_msg: str | None) -> None:
-    output = subprocess.run(
-        command,
-        check=True,
-        cwd=cwd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    if output.returncode != 0:
+    try:
+        output = subprocess.run(
+            command,
+            check=True,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        if output.returncode != 0:
+            raise RuntimeError(
+                (error_msg or "Failed to run command: \n") + output.stdout.decode()
+            )
+    except subprocess.CalledProcessError as e:
         raise RuntimeError(
-            (error_msg or "Failed to run command: \n") + output.stdout.decode()
+            (error_msg or "Failed to run command: \n") + e.stdout.decode()
         )
 
 
