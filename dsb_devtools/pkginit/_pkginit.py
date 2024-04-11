@@ -423,7 +423,7 @@ def run_command(command: list[str], cwd: pathlib.Path, error_msg: str | None) ->
     except subprocess.CalledProcessError as e:
         raise RuntimeError(
             (error_msg or "Failed to run command: \n") + e.stdout.decode()
-        )
+        ) from e
 
 
 def _setup_precommit(repo_dir: pathlib.Path) -> None:
