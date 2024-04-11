@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 
 from .main import main
-import sys
 
 
 def entrypoint() -> None:

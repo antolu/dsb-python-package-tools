@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-
 import argparse
-from .pkginit import main as pkginit_main, make_parser as pkginit_make_parser
+
+from .pkginit import main as pkginit_main
+from .pkginit import make_parser as pkginit_make_parser
 
 
 def main(argv: list[str] | None = None) -> None:

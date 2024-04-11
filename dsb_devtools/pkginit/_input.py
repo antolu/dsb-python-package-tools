@@ -13,9 +13,7 @@ import rich.console
 import rich.table
 from survey import routines, widgets
 
-_EMAIL_REGEX = re.compile(
-    r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
-)
+_EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 _REPO_REGEX = re.compile(
     r"^(?P<protocol>ssh://(git@)?|https://)gitlab.cern.ch(:\d+)?/"
     r"(?P<namespace>(([\w\-_]+/)*([\w\-_]+)))/"
@@ -62,9 +60,7 @@ class TemplateConfig:
     def __str__(self) -> str:
         writer = io.StringIO()
 
-        table = rich.table.Table(
-            title="Package init configuration", show_header=False
-        )
+        table = rich.table.Table(title="Package init configuration", show_header=False)
 
         table.add_column("Name", style="bold")
         table.add_column("Value")
@@ -78,9 +74,7 @@ class TemplateConfig:
         table.add_row("Package URL", self.package_url)
         table.add_row("Include docs", "Yes" if self.use_docs else "No")
         table.add_row("Include tests", "Yes" if self.use_tests else "No")
-        table.add_row(
-            "Include pre-commit", "Yes" if self.use_precommit else "No"
-        )
+        table.add_row("Include pre-commit", "Yes" if self.use_precommit else "No")
         table.add_row("Include CI", "Yes" if self.use_ci else "No")
         if self.use_ci:
             table.add_row("Use Java CI", "Yes" if self.use_java else "No")
@@ -210,7 +204,7 @@ def create_config(args: argparse.Namespace) -> TemplateConfig:
     )
 
 
-def read_input(config: TemplateConfig, force: bool = False) -> TemplateConfig:
+def read_input(config: TemplateConfig, *, force: bool = False) -> TemplateConfig:
     """
     Read the input from the user and update the configuration for missing values.
 
@@ -270,18 +264,19 @@ def confirm_input(config: TemplateConfig) -> bool:
 
 
 def assert_input_valid(config: TemplateConfig) -> None:
-    empty_fields: list[str] = []
-    for field in (
-        "author_name",
-        "author_email",
-        "package_description",
-        "package_name",
-        "package_module",
-        "package_dir",
-        "package_url",
-    ):
-        if getattr(config, field) == "":
-            empty_fields.append(field)
+    empty_fields = [
+        field
+        for field in (
+            "author_name",
+            "author_email",
+            "package_description",
+            "package_name",
+            "package_module",
+            "package_dir",
+            "package_url",
+        )
+        if getattr(config, field) == ""
+    ]
 
     if len(empty_fields) > 0:
         msg = "The following fields/arguments cannot be empty: "
@@ -290,7 +285,7 @@ def assert_input_valid(config: TemplateConfig) -> None:
         raise AssertionError(msg)
 
 
-def ask_specific_input(config: TemplateConfig) -> TemplateConfig:
+def ask_specific_input(config: TemplateConfig) -> TemplateConfig:  # noqa: PLR0912
     """
     Ask the user for specific input.
 
@@ -322,9 +317,7 @@ def ask_specific_input(config: TemplateConfig) -> TemplateConfig:
             f"Include CI: {'Yes' if config.use_ci else 'No'}",
         ]
         if config.use_ci:
-            selections.append(
-                f"Use Java CI: {'Yes' if config.use_java else 'No'}"
-            )
+            selections.append(f"Use Java CI: {'Yes' if config.use_java else 'No'}")
 
         return selections
 
@@ -336,14 +329,12 @@ def ask_specific_input(config: TemplateConfig) -> TemplateConfig:
     ):
         if index == 0:
             break
-        elif index == 1:
+        if index == 1:
             _maybe_read_git_user_name(config, force=True)
         elif index == 2:
             _maybe_read_git_user_email(config, force=True)
         elif index == 3:
-            _maybe_read_package_name(
-                config, reponame_hint=reponame_hint, force=True
-            )
+            _maybe_read_package_name(config, reponame_hint=reponame_hint, force=True)
         elif index == 4:
             _maybe_read_package_module(config, force=True)
         elif index == 5:
@@ -370,52 +361,56 @@ def ask_specific_input(config: TemplateConfig) -> TemplateConfig:
 
 def resolve_docs_url(config: TemplateConfig) -> str:
     if config.package_url == "bare":
-        raise ValueError("Cannot make docs url for a package without git")
-    else:
-        match = _REPO_REGEX.match(config.package_url)
+        msg = "Cannot make docs url for a package without git"
+        raise ValueError(msg)
 
-        if not match:
-            raise ValueError(f"Invalid repository URL {config.package_url}")
+    match = _REPO_REGEX.match(config.package_url)
 
-        namespace = match.group("namespace")
-        reponame = match.group("reponame")
+    if not match:
+        msg = f"Invalid repository URL {config.package_url}"
+        raise ValueError(msg)
 
-        return _ACC_PY_DOCS_STEM.format(namespace=namespace, reponame=reponame)
+    namespace = match.group("namespace")
+    reponame = match.group("reponame")
+
+    return _ACC_PY_DOCS_STEM.format(namespace=namespace, reponame=reponame)
 
 
 def resolve_git_url(config: TemplateConfig) -> str:
     if config.package_url == "bare":
-        raise ValueError("Cannot make git url for a package without git")
-    else:
-        match = _REPO_REGEX.match(config.package_url)
+        msg = "Cannot make git url for a package without git"
+        raise ValueError(msg)
 
-        if not match:
-            raise ValueError(f"Invalid repository URL {config.package_url}")
+    match = _REPO_REGEX.match(config.package_url)
 
-        namespace = match.group("namespace")
-        reponame = match.group("reponame")
+    if not match:
+        msg = f"Invalid repository URL {config.package_url}"
+        raise ValueError(msg)
 
-        return _GITLAB_HTTPS_STEM.format(
-            namespace=namespace, reponame=reponame
-        )
+    namespace = match.group("namespace")
+    reponame = match.group("reponame")
+
+    return _GITLAB_HTTPS_STEM.format(namespace=namespace, reponame=reponame)
 
 
 def resolve_changelog_url(config: TemplateConfig) -> str:
     if config.package_url == "bare":
-        raise ValueError("Cannot make changelog url for a package without git")
-    else:
-        match = _REPO_REGEX.match(config.package_url)
+        msg = "Cannot make changelog url for a package without git"
+        raise ValueError(msg)
 
-        if not match:
-            raise ValueError(f"Invalid repository URL {config.package_url}")
+    match = _REPO_REGEX.match(config.package_url)
 
-        namespace = match.group("namespace")
-        reponame = match.group("reponame")
+    if not match:
+        msg = f"Invalid repository URL {config.package_url}"
+        raise ValueError(msg)
 
-        return (
-            _GITLAB_HTTPS_STEM.format(namespace=namespace, reponame=reponame)
-            + "/-/releases"
-        )
+    namespace = match.group("namespace")
+    reponame = match.group("reponame")
+
+    return (
+        _GITLAB_HTTPS_STEM.format(namespace=namespace, reponame=reponame)
+        + "/-/releases"
+    )
 
 
 def _read_gitconfig(
@@ -432,11 +427,7 @@ def _read_gitconfig(
     config.read(gitconfig_pth)
 
     # Convert the config object to a dictionary
-    config_dict = {
-        s: dict(config.items(s)) for s in config.sections() if s == "user"
-    }
-
-    return config_dict
+    return {s: dict(config.items(s)) for s in config.sections() if s == "user"}
 
 
 def _read_git_user_name(gitconfig_dict: dict[str, typing.Any]) -> str | None:
@@ -456,7 +447,8 @@ def _read_git_user_email(gitconfig_dict: dict[str, typing.Any]) -> str | None:
 def _read_repo_url(repo_url: str) -> tuple[str, str]:
     match = _REPO_REGEX.match(repo_url)
     if not match:
-        raise ValueError(f"{repo_url} is not a valid CERN gitlab repo")
+        msg = f"{repo_url} is not a valid CERN gitlab repo"
+        raise ValueError(msg)
 
     namespace = match.group("namespace")
     reponame = match.group("reponame")
@@ -465,7 +457,7 @@ def _read_repo_url(repo_url: str) -> tuple[str, str]:
 
 
 def _maybe_ask_repo_url(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> tuple[TemplateConfig, str]:
     reponame_hint = ""
     if config.package_url == "" or force:
@@ -474,7 +466,8 @@ def _maybe_ask_repo_url(
             if url == "bare":
                 return
             if not _REPO_REGEX.match(url):
-                raise widgets.Abort(f"{url} is not a valid CERN gitlab repo")
+                msg = f"{url} is not a valid CERN gitlab repo"
+                raise widgets.Abort(msg)
 
         package_url = routines.input(
             'Gitlab repo URL: (use "bare" to to set up without git) ',
@@ -490,14 +483,11 @@ def _maybe_ask_repo_url(
 
 
 def _maybe_read_git_user_name(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     gitconfig = _read_gitconfig()
     if config.author_name == "" or force:
-        if force:
-            default = config.author_name
-        else:
-            default = _read_git_user_name(gitconfig) or ""
+        default = config.author_name if force else _read_git_user_name(gitconfig) or ""
 
         author_name = routines.input("Main author name? ", value=default)
         config.author_name = author_name
@@ -506,14 +496,15 @@ def _maybe_read_git_user_name(
 
 
 def _maybe_read_git_user_email(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     gitconfig = _read_gitconfig()
     if config.author_email == "" or force:
 
         def validate_email(email: str) -> None:
             if not _EMAIL_REGEX.match(email):
-                raise widgets.Abort(f"{email} is not a valid email address")
+                error = f"{email} is not a valid email address"
+                raise widgets.Abort(error)
 
         if force:
             default = config.author_email
@@ -530,6 +521,7 @@ def _maybe_read_git_user_email(
 def _maybe_read_package_name(
     config: TemplateConfig,
     reponame_hint: str | None = None,
+    *,
     force: bool = False,
 ) -> TemplateConfig:
     reponame_hint = reponame_hint or config.package_name
@@ -549,7 +541,7 @@ def _maybe_read_package_name(
 
 
 def _maybe_read_package_module(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     if config.package_module == "" or force:
 
@@ -569,7 +561,7 @@ def _maybe_read_package_module(
 
 
 def _maybe_ask_package_description(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     if config.package_description == "" or force:
         limit = 20
@@ -583,13 +575,14 @@ def _maybe_ask_package_description(
             remain = limit - len(result)
 
             if remain < 0:
-                return "+{0}".format(str(-remain))
-            else:
-                return "{:2d}".format(remain)
+                return f"+{-remain!s}"
+
+            return f"{remain:2d}"
 
         def validate_package_description(description: str) -> None:
             if len(description) < limit:
-                raise widgets.Abort("Description is too short")
+                msg = f"Description is too short. Minimum length is {limit} characters."
+                raise widgets.Abort(msg)
 
         default = config.package_description
 
@@ -606,7 +599,7 @@ def _maybe_ask_package_description(
 
 
 def _maybe_read_package_dir(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     if config.package_dir == pathlib.Path(".") or force:
         if force:
@@ -624,19 +617,17 @@ def _maybe_read_package_dir(
 
 
 def _maybe_read_use_docs(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     if config.use_docs is None or force:
-        use_docs = routines.inquire(
-            "Include documentation skeleton? ", default=True
-        )
+        use_docs = routines.inquire("Include documentation skeleton? ", default=True)
         config.use_docs = use_docs
 
     return config
 
 
 def _maybe_read_use_tests(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     if config.use_tests is None or force:
         use_tests = routines.inquire("Include tests skeleton? ", default=True)
@@ -646,7 +637,7 @@ def _maybe_read_use_tests(
 
 
 def _maybe_read_use_precommit(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     if config.use_precommit is None or force:
         use_precommit = routines.inquire(
@@ -658,19 +649,17 @@ def _maybe_read_use_precommit(
 
 
 def _maybe_read_use_ci(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     if config.use_ci is None or force:
-        use_ci = routines.inquire(
-            "Include an Acc-Py CI configuration? ", default=True
-        )
+        use_ci = routines.inquire("Include an Acc-Py CI configuration? ", default=True)
         config.use_ci = use_ci
 
     return config
 
 
 def _maybe_read_use_java(
-    config: TemplateConfig, force: bool = False
+    config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
     if config.use_java is None or force:
         use_java = routines.inquire(

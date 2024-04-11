@@ -16,7 +16,7 @@ project = "dsb-package-tools"
 author = "Anton Lu"
 version = dsb_devtools.__version__
 
-copyright = "{0}, CERN".format(datetime.datetime.now().year)
+copyright = f"{datetime.datetime.now().year}, CERN"  # noqa: A001
 
 
 # -- General configuration ----------------------------------------------------
@@ -42,7 +42,7 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns: typing.List[str] = []
+exclude_patterns: list[str] = []
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -94,20 +94,20 @@ def hijack_module_name_replacement() -> None:
         if mod_name == "dsb_devtools" or mod_name.startswith("dsb_devtools."):
             del sys.modules[mod_name]
 
-    dsb_devtools._mod_replace.replace_modname = lambda *_: None
+    dsb_devtools._mod_replace.replace_modname = lambda *_: None  # noqa: SLF001
 
 
 hijack_module_name_replacement()
 
 
-def remove__init__from_docs(
+def remove__init__from_docs(  # noqa: PLR0913
     app: sphinx.application.Sphinx,
     what: str,
     name: str,
     obj: object,
-    skip: bool,
+    skip: bool,  # noqa: FBT001
     options: dict,
-) -> typing.Optional[bool]:
+) -> bool | None:
     # Skip the __init__ methods of all classes.
     # Reminder: a handler must return True to skip, None to delegate. False means that
     # the thing MUST not be skipped (giving no chance for downstream handlers to influence
@@ -119,8 +119,8 @@ def remove__init__from_docs(
     if name == "__init__":
         # Skip __init__, which must be documented in the class docstring.
         return True
-    else:
-        return None
+
+    return None
 
 
 nitpicky = True

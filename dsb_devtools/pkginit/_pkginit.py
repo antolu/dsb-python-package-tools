@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import argparse
 import os
 import pathlib
-import argparse
 import shutil
 import subprocess
 import sys
@@ -94,10 +94,8 @@ def main(
     print()
     try:
         pkginit(config)
-    except Exception as e:  # noqa: F722
-        print_failure(
-            f"Failed to initialize package: {e}\n{traceback.format_exc()}"
-        )
+    except Exception as e:
+        print_failure(f"Failed to initialize package: {e}\n{traceback.format_exc()}")
         sys.exit(1)
 
 
@@ -216,9 +214,7 @@ def _make_readme(
         )
 
         if docs_url:
-            f.write(
-                f"\n\nDocumentation available at [Acc-Py docserver]({docs_url})"
-            )
+            f.write(f"\n\nDocumentation available at [Acc-Py docserver]({docs_url})")
 
     if docs_url:
         print_success(
@@ -228,10 +224,8 @@ def _make_readme(
         print_success("README.md is all set with package name and description")
 
 
-def _edit_pyproject(
-    pyproject_path: pathlib.Path, config: TemplateConfig
-) -> None:
-    with open(pyproject_path, "r") as f:
+def _edit_pyproject(pyproject_path: pathlib.Path, config: TemplateConfig) -> None:
+    with open(pyproject_path) as f:
         toml = tomlkit.loads(f.read())
 
     toml["project"]["name"] = config.package_name  # type: ignore[index]
@@ -249,9 +243,7 @@ def _edit_pyproject(
             config
         )
 
-    toml["tool"]["setuptools_scm"][  # type: ignore[index]
-        "write_to"
-    ] = f"{config.package_module}/_version.py"  # noqa: E501
+    toml["tool"]["setuptools_scm"]["write_to"] = f"{config.package_module}/_version.py"  # type: ignore[index]
 
     toml["tool"]["setuptools"]["packages"]["find"]["include"] = [  # type: ignore[index]
         f"{config.package_module}*",
@@ -274,7 +266,7 @@ def _replace_in_file(
 ) -> None:
     replace = replace or {}
     replace.update(kwargs)
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         lines = f.readlines()
 
     for i, line in enumerate(list(lines)):
@@ -320,7 +312,7 @@ def _edit_gitlab_ci(
     config: TemplateConfig,
 ) -> None:
     yaml = ruamel.yaml.YAML(typ="rt")
-    with open(gitlab_ci_conf_path, "r") as f:
+    with open(gitlab_ci_conf_path) as f:
         ci_conf = yaml.load(f)
 
     ci_conf["variables"]["project_name"] = config.package_name
@@ -338,9 +330,7 @@ def _edit_gitlab_ci(
         ci_conf.pop("test_wheel")
 
     if config.use_java:
-        ci_conf["variables"][
-            "ACC_PY_BASE_IMAGE_NAME"
-        ] = "acc-py_cc7_openjdk11_ci"
+        ci_conf["variables"]["ACC_PY_BASE_IMAGE_NAME"] = "acc-py_cc7_openjdk11_ci"
 
         if config.use_tests:
             if "extends" in ci_conf["test_dev"]:
@@ -371,9 +361,7 @@ def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
     try:
         command = ["git", "init"]
 
-        run_command(
-            command, repo_dir, "Failed to initialize git repository:\n"
-        )
+        run_command(command, repo_dir, "Failed to initialize git repository:\n")
         print_success("Initialized git repository in the package directory")
 
         command = ["git", "remote", "add", "origin", repo_url]
@@ -388,15 +376,11 @@ def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
             "Failed to set master branch as default branch:\n",
         )
         print_success("Set default branch to master")
-    except Exception as e:  # noqa: F722
-        raise e
     finally:
         os.chdir(cwd)
 
 
-def run_command(
-    command: list[str], cwd: pathlib.Path, error_msg: str | None
-) -> None:
+def run_command(command: list[str], cwd: pathlib.Path, error_msg: str | None) -> None:
     output = subprocess.run(
         command,
         check=True,
@@ -418,9 +402,7 @@ def _setup_precommit(repo_dir: pathlib.Path) -> None:
     # check if pre-commit is installed
     try:
         command = ["pre-commit", "--version"]
-        run_command(
-            command, repo_dir, "Failed to check existence of pre-commit:\n"
-        )
+        run_command(command, repo_dir, "Failed to check existence of pre-commit:\n")
     except FileNotFoundError:
         print_in_progress("pre-commit not found, installing...")
         command = ["pip", "install", "pre-commit"]
@@ -428,8 +410,6 @@ def _setup_precommit(repo_dir: pathlib.Path) -> None:
 
     command = ["pre-commit", "install"]
     run_command(command, repo_dir, "Failed to install pre-commit hooks:\n")
-    print_success(
-        "Installed pre-commit hooks. Use `pre-commit run` to test run them."
-    )
+    print_success("Installed pre-commit hooks. Use `pre-commit run` to test run them.")
 
     os.chdir(cwd)
