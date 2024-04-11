@@ -69,7 +69,7 @@ dsb-devtools = "dsb_devtools.__main__:entrypoint"
 
 [tool.black]
 target-version = ["py311"]
-line-length = 79
+line-length = 88
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -111,13 +111,50 @@ exclude = [
     ".venv",
 ]
 
-line-length = 79
+line-length = 88
 target-version = "py311"
 
 [tool.ruff.lint]
+# All rules can be found here: https://docs.astral.sh/ruff/rules/
+select = [
+    "F",   # pyflakes
+    "E",   # error  (pycodestyle)
+    "W",   # warning (pycodestyle)
+    "I",   # isort
+    "N",   # naming  (pep8)
+    "UP",  # pyupgrade
+    "PLC", # convention  (pylint)
+    "PLE", # error  (pylint)
+    "PLW", # warning  (pylint)
+    "PLR", # refactor  (pylint)
+    # "D",  # docstring (pydocstyle),  # not enabled by default
+    "PD",   # pandas
+    "TRY",  # tryceratops
+    "NPY",  # numpy
+    "PERF", # perflint
+    "RUF",  # ruff
+    # v flake8 v
+    "B",
+    "C",
+    "C4",
+    "FBT",
+    "A",
+    "EM",
+    "ISC",
+    "FA",
+    "LOG",
+    "G",
+    "PIE",
+    "PYI",
+    "PT",
+    "Q",
+    "RSE",
+    "RET",
+    "SLF",
+    "SIM",
+]
 fixable = ["ALL"]
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-ignore = ["E501"]
+ignore = ["E501", "W505"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
