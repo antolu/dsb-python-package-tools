@@ -220,7 +220,6 @@ def read_input(config: TemplateConfig, *, force: bool = False) -> TemplateConfig
     TemplateConfig
         The updated configuration.
     """
-    reponame_hint = ""
     _, reponame_hint = _maybe_ask_repo_url(config, force=True)
 
     _maybe_read_git_user_name(config, force=force)

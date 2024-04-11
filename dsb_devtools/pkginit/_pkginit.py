@@ -360,7 +360,6 @@ def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
 
     try:
         command = ["git", "init"]
-
         run_command(command, repo_dir, "Failed to initialize git repository:\n")
         print_success("Initialized git repository in the package directory")
 
@@ -376,6 +375,15 @@ def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
             "Failed to set master branch as default branch:\n",
         )
         print_success("Set default branch to master")
+
+        # track remote master branch
+        command = ["git", "branch", "--set-upstream-to=origin/master", "master"]
+        run_command(
+            command,
+            repo_dir,
+            "Failed to track remote master branch:\n",
+        )
+        print_success("Tracking remote master branch")
     finally:
         os.chdir(cwd)
 
