@@ -1,5 +1,8 @@
 dsb_devtools/_version.py
 
+# Acc-Py specific
+docs/html/
+
 # torch
 lightning_logs/
 *.pth
