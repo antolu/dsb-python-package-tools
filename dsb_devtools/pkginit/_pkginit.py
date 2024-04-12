@@ -403,6 +403,15 @@ def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
             "Failed to track remote master branch:\n",
         )
         print_success("Tracking remote master branch")
+
+        # push to remote
+        command = ["git", "push", "-u", "origin", "master"]
+        run_command(
+            command,
+            repo_dir,
+            "Failed to push to remote master branch:\n",
+        )
+        print_success("Pushed to remote master branch")
     finally:
         os.chdir(cwd)
 
