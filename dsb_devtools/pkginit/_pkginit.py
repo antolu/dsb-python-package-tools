@@ -214,7 +214,7 @@ def _make_readme(
         )
 
         if docs_url:
-            f.write(f"\n\nDocumentation available at [Acc-Py docserver]({docs_url})")
+            f.write(f"\n\nDocumentation available on [Acc-Py docserver]({docs_url})")
         f.write("\n")
 
     if docs_url:
