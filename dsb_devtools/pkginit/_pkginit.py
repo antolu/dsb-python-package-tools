@@ -335,6 +335,8 @@ def _edit_gitlab_ci(
 
         if config.use_tests:
             if "extends" in ci_conf["test_dev"]:
+                if isinstance(ci_conf["test_dev"]["extends"], str):
+                    ci_conf["test_dev"]["extends"] = [ci_conf["test_dev"]["extends"]]
                 ci_conf["test_dev"]["extends"].append(".acc_py_run_on_acc_py")
             else:
                 ci_conf["test_dev"]["extends"] = [".acc_py_run_on_acc_py"]
