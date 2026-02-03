@@ -45,15 +45,15 @@ class TemplateConfig:
     package_dir: pathlib.Path = pathlib.Path(".")
     """ The directory where the package will be initialized (the parent directory). """
 
-    use_ci: bool = True
+    use_ci: bool | None = None
     """ Include a CI configuration. """
-    use_precommit: bool = True
+    use_precommit: bool | None = None
     """ Include a pre-commit configuration. """
-    use_docs: bool = True
+    use_docs: bool | None = None
     """ Include documentation. """
-    use_tests: bool = True
+    use_tests: bool | None = None
     """ Include tests. """
-    use_java: bool = False
+    use_java: bool | None = None
     """ Use CI image that supports Java. """
 
     no_confirm: bool = False
@@ -139,10 +139,24 @@ def make_parser(
         help="The directory where the package will be initialized.",
     )
     parser.add_argument(
+        "--ci",
+        action="store_true",
+        dest="use_ci",
+        default=None,
+        help="Include a CI configuration.",
+    )
+    parser.add_argument(
         "--no-ci",
         action="store_false",
         dest="use_ci",
         help="Do not include a CI configuration.",
+    )
+    parser.add_argument(
+        "--precommit",
+        action="store_true",
+        dest="use_precommit",
+        default=None,
+        help="Include a pre-commit configuration.",
     )
     parser.add_argument(
         "--no-precommit",
@@ -151,10 +165,24 @@ def make_parser(
         help="Do not include a pre-commit configuration.",
     )
     parser.add_argument(
+        "--docs",
+        action="store_true",
+        dest="use_docs",
+        default=None,
+        help="Include documentation.",
+    )
+    parser.add_argument(
         "--no-docs",
         action="store_false",
         dest="use_docs",
         help="Do not include documentation.",
+    )
+    parser.add_argument(
+        "--tests",
+        action="store_true",
+        dest="use_tests",
+        default=None,
+        help="Include tests.",
     )
     parser.add_argument(
         "--no-tests",
@@ -241,6 +269,20 @@ def read_input(config: TemplateConfig, *, force: bool = False) -> TemplateConfig
         _maybe_read_use_java(config, force=force)
 
     return config
+
+
+def set_config_defaults(config: TemplateConfig) -> None:
+    """Set default values for None fields."""
+    if config.use_ci is None:
+        config.use_ci = True
+    if config.use_precommit is None:
+        config.use_precommit = True
+    if config.use_docs is None:
+        config.use_docs = True
+    if config.use_tests is None:
+        config.use_tests = True
+    if config.use_java is None:
+        config.use_java = False
 
 
 def confirm_input(config: TemplateConfig) -> bool:

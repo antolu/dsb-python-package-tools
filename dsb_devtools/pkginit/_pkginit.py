@@ -27,6 +27,7 @@ from ._input import (
     resolve_changelog_url,
     resolve_docs_url,
     resolve_git_url,
+    set_config_defaults,
 )
 
 TEMPLATE_DIR = pathlib.Path(__file__).parent.parent / "templates"
@@ -61,6 +62,11 @@ def print_banner() -> None:
     print(BANNER)
 
 
+def _set_config_defaults(config: TemplateConfig) -> None:
+    """Set default values for None fields."""
+    set_config_defaults(config)
+
+
 def main(
     argv: list[str] | argparse.Namespace | None = None,
     parser: argparse.ArgumentParser | None = None,
@@ -91,6 +97,8 @@ def main(
         except AssertionError as e:
             print_failure(str(e))
             sys.exit(1)
+
+        _set_config_defaults(config)
 
     print()
     try:
