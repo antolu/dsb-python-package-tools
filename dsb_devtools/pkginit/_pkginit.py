@@ -454,19 +454,19 @@ def run_command(command: list[str], cwd: pathlib.Path, error_msg: str | None) ->
 def _setup_precommit(repo_dir: pathlib.Path) -> None:
     cwd = pathlib.Path().cwd()
 
-    os.chdir(repo_dir)
-
-    # check if pre-commit is installed
     try:
-        command = ["pre-commit", "--version"]
-        run_command(command, repo_dir, "Failed to check existence of pre-commit:\n")
-    except FileNotFoundError:
-        print_in_progress("pre-commit not found, installing...")
-        command = ["pip", "install", "pre-commit"]
-        run_command(command, repo_dir, "Failed to install pre-commit:\n")
+        os.chdir(repo_dir)
 
-    command = ["pre-commit", "install"]
-    run_command(command, repo_dir, "Failed to install pre-commit hooks:\n")
-    print_success("Installed pre-commit hooks. Use `pre-commit run` to test run them.")
+        # check if pre-commit is installed
+        if shutil.which("pre-commit") is None:
+            print_in_progress("pre-commit not found, installing...")
+            command = [sys.executable, "-m", "pip", "install", "pre-commit"]
+            run_command(command, repo_dir, "Failed to install pre-commit:\n")
 
-    os.chdir(cwd)
+        command = ["pre-commit", "install"]
+        run_command(command, repo_dir, "Failed to install pre-commit hooks:\n")
+        print_success(
+            "Installed pre-commit hooks. Use `pre-commit run` to test run them."
+        )
+    finally:
+        os.chdir(cwd)
