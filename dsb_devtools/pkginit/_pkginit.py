@@ -381,9 +381,10 @@ def _edit_gitlab_ci(
 
 def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
     cwd = pathlib.Path.cwd()
-    os.chdir(repo_dir)
 
     try:
+        os.chdir(repo_dir)
+
         command = ["git", "init"]
         run_command(command, repo_dir, "Failed to initialize git repository:\n")
         print_success("Initialized git repository in the package directory")
