@@ -397,16 +397,7 @@ def _setup_vcs(repo_dir: pathlib.Path, repo_url: str) -> None:
         )
         print_success("Committed all files as initial commit")
 
-        # track remote master branch
-        command = ["git", "branch", "--track", "origin/master"]
-        run_command(
-            command,
-            repo_dir,
-            "Failed to track remote master branch:\n",
-        )
-        print_success("Tracking remote master branch")
-
-        # push to remote
+        # push to remote (the -u flag sets up tracking automatically)
         command = ["git", "push", "-u", "origin", "master"]
         run_command(
             command,
