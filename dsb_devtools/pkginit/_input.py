@@ -403,54 +403,53 @@ def ask_specific_input(config: TemplateConfig) -> TemplateConfig:  # noqa: PLR09
     return config
 
 
-def resolve_docs_url(config: TemplateConfig) -> str:
-    if config.package_url == "bare":
-        msg = "Cannot make docs url for a package without git"
+def _parse_repo_url(package_url: str) -> tuple[str, str]:
+    """
+    Parse repository URL and return namespace and reponame.
+
+    Parameters
+    ----------
+    package_url : str
+        The repository URL to parse.
+
+    Returns
+    -------
+    tuple[str, str]
+        The namespace and repository name.
+
+    Raises
+    ------
+    ValueError
+        If the URL is invalid or is "bare".
+    """
+    if package_url == "bare":
+        msg = "Cannot parse URL for a package without git"
         raise ValueError(msg)
 
-    match = _REPO_REGEX.match(config.package_url)
+    match = _REPO_REGEX.match(package_url)
 
     if not match:
-        msg = f"Invalid repository URL {config.package_url}"
+        msg = f"Invalid repository URL {package_url}"
         raise ValueError(msg)
 
     namespace = match.group("namespace")
     reponame = match.group("reponame")
 
+    return namespace, reponame
+
+
+def resolve_docs_url(config: TemplateConfig) -> str:
+    namespace, reponame = _parse_repo_url(config.package_url)
     return _ACC_PY_DOCS_STEM.format(namespace=namespace, reponame=reponame)
 
 
 def resolve_git_url(config: TemplateConfig) -> str:
-    if config.package_url == "bare":
-        msg = "Cannot make git url for a package without git"
-        raise ValueError(msg)
-
-    match = _REPO_REGEX.match(config.package_url)
-
-    if not match:
-        msg = f"Invalid repository URL {config.package_url}"
-        raise ValueError(msg)
-
-    namespace = match.group("namespace")
-    reponame = match.group("reponame")
-
+    namespace, reponame = _parse_repo_url(config.package_url)
     return _GITLAB_HTTPS_STEM.format(namespace=namespace, reponame=reponame)
 
 
 def resolve_changelog_url(config: TemplateConfig) -> str:
-    if config.package_url == "bare":
-        msg = "Cannot make changelog url for a package without git"
-        raise ValueError(msg)
-
-    match = _REPO_REGEX.match(config.package_url)
-
-    if not match:
-        msg = f"Invalid repository URL {config.package_url}"
-        raise ValueError(msg)
-
-    namespace = match.group("namespace")
-    reponame = match.group("reponame")
-
+    namespace, reponame = _parse_repo_url(config.package_url)
     return (
         _GITLAB_HTTPS_STEM.format(namespace=namespace, reponame=reponame)
         + "/-/releases"
