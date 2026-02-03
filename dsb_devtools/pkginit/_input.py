@@ -529,7 +529,23 @@ def _maybe_read_package_name(
     reponame_hint = reponame_hint or config.package_name
     if config.package_name == "" or force:
 
-        def validate_package_name(name: str) -> None: ...
+        def validate_package_name(name: str) -> None:
+            if not name:
+                msg = "Package name cannot be empty"
+                raise widgets.Abort(msg)
+
+            # Check for invalid characters (allow letters, numbers, dashes, underscores)
+            if not re.match(r"^[a-zA-Z0-9_-]+$", name):
+                msg = (
+                    f"{name} contains invalid characters. "
+                    "Use only letters, numbers, dashes, and underscores."
+                )
+                raise widgets.Abort(msg)
+
+            # Check if it starts with a letter
+            if not name[0].isalpha():
+                msg = f"{name} must start with a letter"
+                raise widgets.Abort(msg)
 
         package_name = routines.input(
             "What is the package name? ",
