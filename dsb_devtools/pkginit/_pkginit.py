@@ -300,7 +300,7 @@ def _replace_in_file(
     with open(file_path) as f:
         lines = f.readlines()
 
-    for i, line in enumerate(list(lines)):
+    for i, line in enumerate(lines):
         for old, new in replace.items():
             if old in line:
                 lines[i] = line.replace(old, new)
