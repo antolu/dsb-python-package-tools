@@ -129,78 +129,77 @@ def pkginit(config: TemplateConfig) -> None:
     dest_dir = config.package_dir
     _validate_dest_dir(dest_dir)
 
-    tmp_file = tempfile.TemporaryDirectory()
-    tmp_dir = pathlib.Path(tmp_file.name)
+    with tempfile.TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = pathlib.Path(tmp_dir_str)
 
-    # Copy the template files to the temporary directory
-    files_to_copy = [
-        "pyproject.toml",
-        ".gitignore",
-    ]
-    for file_ in files_to_copy:
-        shutil.copy(TEMPLATE_DIR / file_, tmp_dir / file_)
+        # Copy the template files to the temporary directory
+        files_to_copy = [
+            "pyproject.toml",
+            ".gitignore",
+        ]
+        for file_ in files_to_copy:
+            shutil.copy(TEMPLATE_DIR / file_, tmp_dir / file_)
 
-    shutil.copytree(TEMPLATE_DIR / "package_name", tmp_dir / "package_name")
+        shutil.copytree(TEMPLATE_DIR / "package_name", tmp_dir / "package_name")
 
-    (tmp_dir / "package_name").rename(tmp_dir / config.package_module)
-    _edit_gitignore(tmp_dir / ".gitignore", config.package_module)
-    _make_readme(tmp_dir / "README.md", config)
-    _edit_pyproject(tmp_dir / "pyproject.toml", config)
+        (tmp_dir / "package_name").rename(tmp_dir / config.package_module)
+        _edit_gitignore(tmp_dir / ".gitignore", config.package_module)
+        _make_readme(tmp_dir / "README.md", config)
+        _edit_pyproject(tmp_dir / "pyproject.toml", config)
 
-    if config.use_docs:
-        shutil.copytree(TEMPLATE_DIR / "docs", tmp_dir / "docs")
-        _edit_docs(
-            tmp_dir / "docs",
-            config.package_name,
-            config.package_module,
-            config.author_name,
-        )
-
-    if config.use_tests:
-        shutil.copytree(TEMPLATE_DIR / "tests", tmp_dir / "tests")
-
-    if config.use_precommit:
-        shutil.copy(
-            TEMPLATE_DIR / ".pre-commit-config.yaml",
-            tmp_dir / ".pre-commit-config.yaml",
-        )
-
-    if config.use_ci:
-        shutil.copy(
-            TEMPLATE_DIR / ".gitlab-ci.yml",
-            tmp_dir / ".gitlab-ci.yml",
-        )
-        _edit_gitlab_ci(tmp_dir / ".gitlab-ci.yml", config)
-
-    # set up git and pre-commit
-    if config.package_url != "bare":
-        try:
-            _setup_vcs(tmp_dir, config.package_url)
-        except RuntimeError as e:
-            print_failure(
-                "Failed to setup git repository. "
-                "Please run `git init` in the repository directory"
-                "to initialize the repository manually.\n\n"
-                f"Error: {e}"
-            )
-    else:
-        print_success("Skipping git setup as package_url is 'bare'")
-
-    if config.use_precommit:
-        try:
-            _setup_precommit(tmp_dir)
-        except RuntimeError as e:
-            print(
-                "Failed to setup pre-commit hooks. "
-                "Please run `pre-commit install` in the repository directory"
-                "to install the hooks manually.\n"
-                f"Error: {e}"
+        if config.use_docs:
+            shutil.copytree(TEMPLATE_DIR / "docs", tmp_dir / "docs")
+            _edit_docs(
+                tmp_dir / "docs",
+                config.package_name,
+                config.package_module,
+                config.author_name,
             )
 
-    if dest_dir.exists():
-        shutil.rmtree(dest_dir)
-    shutil.copytree(tmp_dir, dest_dir)
-    tmp_file.cleanup()
+        if config.use_tests:
+            shutil.copytree(TEMPLATE_DIR / "tests", tmp_dir / "tests")
+
+        if config.use_precommit:
+            shutil.copy(
+                TEMPLATE_DIR / ".pre-commit-config.yaml",
+                tmp_dir / ".pre-commit-config.yaml",
+            )
+
+        if config.use_ci:
+            shutil.copy(
+                TEMPLATE_DIR / ".gitlab-ci.yml",
+                tmp_dir / ".gitlab-ci.yml",
+            )
+            _edit_gitlab_ci(tmp_dir / ".gitlab-ci.yml", config)
+
+        # set up git and pre-commit
+        if config.package_url != "bare":
+            try:
+                _setup_vcs(tmp_dir, config.package_url)
+            except RuntimeError as e:
+                print_failure(
+                    "Failed to setup git repository. "
+                    "Please run `git init` in the repository directory"
+                    "to initialize the repository manually.\n\n"
+                    f"Error: {e}"
+                )
+        else:
+            print_success("Skipping git setup as package_url is 'bare'")
+
+        if config.use_precommit:
+            try:
+                _setup_precommit(tmp_dir)
+            except RuntimeError as e:
+                print(
+                    "Failed to setup pre-commit hooks. "
+                    "Please run `pre-commit install` in the repository directory"
+                    "to install the hooks manually.\n"
+                    f"Error: {e}"
+                )
+
+        if dest_dir.exists():
+            shutil.rmtree(dest_dir)
+        shutil.copytree(tmp_dir, dest_dir)
 
     print(
         "Run `pip install -e . --config-settings editable_mode=compat` to get started"
