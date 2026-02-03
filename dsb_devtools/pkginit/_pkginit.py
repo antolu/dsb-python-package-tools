@@ -13,6 +13,7 @@ import typing
 import rich
 import rich.console
 import ruamel.yaml
+import survey.routines
 import tomlkit
 
 from ._input import (
@@ -99,6 +100,25 @@ def main(
         sys.exit(1)
 
 
+def _validate_dest_dir(dest_dir: pathlib.Path) -> None:
+    """Validate that destination directory is safe to use."""
+    if dest_dir.exists():
+        if not dest_dir.is_dir():
+            msg = f"{dest_dir} exists and is not a directory"
+            raise ValueError(msg)
+
+        # Check if directory is not empty
+        if any(dest_dir.iterdir()):
+            rich.print(
+                f"[yellow]Warning:[/yellow] {dest_dir} already exists and is not empty"
+            )
+            if not survey.routines.inquire(
+                f"Delete all contents of {dest_dir}? ", default=False
+            ):
+                msg = "Operation cancelled by user"
+                raise RuntimeError(msg)
+
+
 def pkginit(config: TemplateConfig) -> None:
     """
     Make a temporary directory and copy the template files to it.
@@ -106,9 +126,11 @@ def pkginit(config: TemplateConfig) -> None:
     Then make the necessary edits to the files, and copy the whole directory
     to config.package_dir
     """
+    dest_dir = config.package_dir
+    _validate_dest_dir(dest_dir)
+
     tmp_file = tempfile.TemporaryDirectory()
     tmp_dir = pathlib.Path(tmp_file.name)
-    dest_dir = config.package_dir
 
     # Copy the template files to the temporary directory
     files_to_copy = [
@@ -175,7 +197,8 @@ def pkginit(config: TemplateConfig) -> None:
                 f"Error: {e}"
             )
 
-    shutil.rmtree(dest_dir, ignore_errors=True)
+    if dest_dir.exists():
+        shutil.rmtree(dest_dir)
     shutil.copytree(tmp_dir, dest_dir)
     tmp_file.cleanup()
 
