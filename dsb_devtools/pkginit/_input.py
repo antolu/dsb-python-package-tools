@@ -4,6 +4,7 @@ import argparse
 import configparser
 import dataclasses
 import io
+import keyword
 import os
 import pathlib
 import re
@@ -545,7 +546,18 @@ def _maybe_read_package_module(
 ) -> TemplateConfig:
     if config.package_module == "" or force:
 
-        def validate_package_module(name: str) -> None: ...
+        def validate_package_module(name: str) -> None:
+            if not name.isidentifier():
+                msg = (
+                    f"{name} is not a valid Python identifier. "
+                    "Use only letters, numbers, and underscores, "
+                    "and don't start with a number."
+                )
+                raise widgets.Abort(msg)
+
+            if keyword.iskeyword(name):
+                msg = f"{name} is a Python keyword and cannot be used as a module name"
+                raise widgets.Abort(msg)
 
         default = config.package_name.replace("-", "_")
 
