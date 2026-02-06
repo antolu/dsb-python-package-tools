@@ -13,7 +13,7 @@ import typing
 import rich
 import rich.console
 import ruamel.yaml
-import survey.routines
+import survey
 import tomlkit
 
 from ._input import (
@@ -102,6 +102,7 @@ def main(
 
     print()
     try:
+        _validate_dest_dir(config.package_dir)
         pkginit(config)
     except Exception as e:
         print_failure(f"Failed to initialize package: {e}\n{traceback.format_exc()}")
@@ -135,7 +136,6 @@ def pkginit(config: TemplateConfig) -> None:
     to config.package_dir
     """
     dest_dir = config.package_dir
-    _validate_dest_dir(dest_dir)
 
     with tempfile.TemporaryDirectory() as tmp_dir_str:
         tmp_dir = pathlib.Path(tmp_dir_str)
@@ -206,6 +206,7 @@ def pkginit(config: TemplateConfig) -> None:
                 )
 
         if dest_dir.exists():
+            # already checked that the directory is empty
             shutil.rmtree(dest_dir)
         shutil.copytree(tmp_dir, dest_dir)
 
