@@ -194,6 +194,7 @@ def make_parser(
         "--java-ci",
         action="store_true",
         dest="use_java",
+        default=None,
         help="Use a CI image that supports Java.",
     )
     parser.add_argument(
@@ -687,7 +688,7 @@ def _maybe_read_package_dir(
 def _maybe_read_use_docs(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if config.use_docs is None or force:
+    if force:
         use_docs = routines.inquire("Include documentation skeleton? ", default=True)
         config.use_docs = use_docs
 
@@ -697,7 +698,7 @@ def _maybe_read_use_docs(
 def _maybe_read_use_tests(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if config.use_tests is None or force:
+    if force:
         use_tests = routines.inquire("Include tests skeleton? ", default=True)
         config.use_tests = use_tests
 
@@ -707,7 +708,7 @@ def _maybe_read_use_tests(
 def _maybe_read_use_precommit(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if config.use_precommit is None or force:
+    if force:
         use_precommit = routines.inquire(
             "Include a pre-commit configuration and initialize? ", default=True
         )
@@ -719,7 +720,7 @@ def _maybe_read_use_precommit(
 def _maybe_read_use_ci(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if config.use_ci is None or force:
+    if force:
         use_ci = routines.inquire("Include an Acc-Py CI configuration? ", default=True)
         config.use_ci = use_ci
 
@@ -729,7 +730,7 @@ def _maybe_read_use_ci(
 def _maybe_read_use_java(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if config.use_java is None or force:
+    if force:
         use_java = routines.inquire(
             "Use a CI image that supports Java? ", default=False
         )

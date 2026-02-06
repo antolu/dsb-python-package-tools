@@ -195,25 +195,22 @@ def test_all_positive_flags() -> None:
 
 
 @patch("dsb_devtools.pkginit._input.routines.inquire")
-def test_maybe_read_use_ci_prompts_when_none(mock_inquire: MagicMock) -> None:
-    """_maybe_read_use_ci should prompt when value is None."""
-    mock_inquire.return_value = False
-
+def test_maybe_read_use_ci_skips_when_none(mock_inquire: MagicMock) -> None:
+    """It should NOT ask for input when use_ci is None (defaults are applied later)."""
     config = TemplateConfig(
-        author_name="Test",
-        author_email="test@example.com",
-        package_name="test-pkg",
-        package_module="test_pkg",
-        package_url="bare",
-        package_description="Test description",
+        author_name="Me",
+        author_email="me@cern.ch",
+        package_name="test-package",
+        package_module="test_package",
+        package_url="https://gitlab.cern.ch/namespace/test-package.git",
+        package_description="Description",
         use_ci=None,
     )
 
     _maybe_read_use_ci(config, force=False)
 
-    # Should have prompted
-    mock_inquire.assert_called_once()
-    assert config.use_ci is False
+    mock_inquire.assert_not_called()
+    assert config.use_ci is None
 
 
 @patch("dsb_devtools.pkginit._input.routines.inquire")
@@ -259,11 +256,8 @@ def test_maybe_read_use_ci_prompts_when_force(mock_inquire: MagicMock) -> None:
 
 
 @patch("dsb_devtools.pkginit._input.routines.inquire")
-def test_maybe_read_use_docs_respects_none_check(mock_inquire: MagicMock) -> None:
-    """_maybe_read_use_docs should check for None before prompting."""
-    mock_inquire.return_value = False
-
-    # Test with None - should prompt
+def test_maybe_read_use_docs_skips_when_none(mock_inquire: MagicMock) -> None:
+    """_maybe_read_use_docs should NOT prompt when value is None (defaults later)."""
     config1 = TemplateConfig(
         author_name="Test",
         author_email="test@example.com",
@@ -274,9 +268,8 @@ def test_maybe_read_use_docs_respects_none_check(mock_inquire: MagicMock) -> Non
         use_docs=None,
     )
     _maybe_read_use_docs(config1, force=False)
-    assert mock_inquire.call_count == 1
-
-    # Test with False - should NOT prompt
+    mock_inquire.assert_not_called()
+    assert config1.use_docs is None  # should NOT prompt
     mock_inquire.reset_mock()
     config2 = TemplateConfig(
         author_name="Test",
