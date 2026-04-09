@@ -5,9 +5,9 @@ Boolean flags (use_ci, use_precommit, use_docs, use_tests, use_java) use None as
 sentinel to distinguish "not set by user" from an explicit True/False. This matters
 for two reasons:
 
-- Interactive mode: if a flag is None (not passed via CLI), the user is prompted with
-  a sensible default (True for everything except use_java which defaults to False). If
-  the flag was explicitly passed, the prompt is skipped and the CLI value is kept.
+- Interactive mode: boolean flags are never prompted. Defaults are applied silently
+  (True for everything except use_java which defaults to False), and CLI-provided
+  values are preserved. The summary screen reflects these values.
 
 - Non-interactive mode (--no-confirm): None values are filled in by set_config_defaults,
   applying the same defaults (True except use_java=False) without any prompting.
@@ -280,14 +280,9 @@ def read_input(config: TemplateConfig, *, force: bool = False) -> TemplateConfig
 
     _maybe_read_package_dir(config, force=force)
 
-    # Boolean flags prompt when None (not set via CLI) or when force=True (re-prompting).
-    # CLI-provided values are preserved and not re-prompted in non-force mode.
-    _maybe_read_use_docs(config, force=force)
-    _maybe_read_use_tests(config, force=force)
-    _maybe_read_use_precommit(config, force=force)
-    _maybe_read_use_ci(config, force=force)
-    if config.use_ci:
-        _maybe_read_use_java(config, force=force)
+    # Boolean flags are not prompted — defaults are applied here so the summary
+    # screen shows correct values. CLI-provided values are preserved.
+    set_config_defaults(config)
 
     return config
 
