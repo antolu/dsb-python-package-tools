@@ -1,3 +1,21 @@
+"""
+Input handling and CLI argument parsing for pkginit.
+
+Boolean flags (use_ci, use_precommit, use_docs, use_tests, use_java) use None as a
+sentinel to distinguish "not set by user" from an explicit True/False. This matters
+for two reasons:
+
+- Interactive mode: if a flag is None (not passed via CLI), the user is prompted with
+  a sensible default (True for everything except use_java which defaults to False). If
+  the flag was explicitly passed, the prompt is skipped and the CLI value is kept.
+
+- Non-interactive mode (--no-confirm): None values are filled in by set_config_defaults,
+  applying the same defaults (True except use_java=False) without any prompting.
+
+The argparse parser therefore sets default=None on boolean flags rather than relying on
+argparse's implicit store_true/store_false defaults, which would be False.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -262,6 +280,8 @@ def read_input(config: TemplateConfig, *, force: bool = False) -> TemplateConfig
 
     _maybe_read_package_dir(config, force=force)
 
+    # Boolean flags prompt when None (not set via CLI) or when force=True (re-prompting).
+    # CLI-provided values are preserved and not re-prompted in non-force mode.
     _maybe_read_use_docs(config, force=force)
     _maybe_read_use_tests(config, force=force)
     _maybe_read_use_precommit(config, force=force)
@@ -688,7 +708,7 @@ def _maybe_read_package_dir(
 def _maybe_read_use_docs(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if force:
+    if config.use_docs is None or force:
         use_docs = routines.inquire("Include documentation skeleton? ", default=True)
         config.use_docs = use_docs
 
@@ -698,7 +718,7 @@ def _maybe_read_use_docs(
 def _maybe_read_use_tests(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if force:
+    if config.use_tests is None or force:
         use_tests = routines.inquire("Include tests skeleton? ", default=True)
         config.use_tests = use_tests
 
@@ -708,7 +728,7 @@ def _maybe_read_use_tests(
 def _maybe_read_use_precommit(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if force:
+    if config.use_precommit is None or force:
         use_precommit = routines.inquire(
             "Include a pre-commit configuration and initialize? ", default=True
         )
@@ -720,7 +740,7 @@ def _maybe_read_use_precommit(
 def _maybe_read_use_ci(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if force:
+    if config.use_ci is None or force:
         use_ci = routines.inquire("Include an Acc-Py CI configuration? ", default=True)
         config.use_ci = use_ci
 
@@ -730,7 +750,7 @@ def _maybe_read_use_ci(
 def _maybe_read_use_java(
     config: TemplateConfig, *, force: bool = False
 ) -> TemplateConfig:
-    if force:
+    if config.use_java is None or force:
         use_java = routines.inquire(
             "Use a CI image that supports Java? ", default=False
         )
