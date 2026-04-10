@@ -16,22 +16,30 @@
   },
   "packageRules": [
     {
-      "matchManagers": [
-        "pep621"
+      "matchDatasources": [
+        "pypi"
       ],
-      "commitMessagePrefix": "chore(deps):",
       "registryUrls": [
         "https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/"
       ]
     },
     {
+      "matchDatasources": [
+        "python-version"
+      ],
+      "enabled": false
+    },
+    {
+      "matchManagers": [
+        "pep621"
+      ],
+      "commitMessagePrefix": "chore(deps):"
+    },
+    {
       "matchManagers": [
         "pre-commit"
       ],
-      "commitMessagePrefix": "chore(hooks):",
-      "registryUrls": [
-        "https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/"
-      ]
+      "commitMessagePrefix": "chore(hooks):"
     },
     {
       "matchManagers": [

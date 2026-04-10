@@ -230,18 +230,19 @@ def write_renovate_json(
     if config.precommit:
         enabled_managers.append("pre-commit")
 
-    package_rules = []
+    package_rules: list[dict] = [
+        {"matchDatasources": ["pypi"], "registryUrls": [_ACC_PY_REGISTRY]},
+        {"matchDatasources": ["python-version"], "enabled": False},
+    ]
     if config.pyproject:
         package_rules.append({
             "matchManagers": ["pep621"],
             "commitMessagePrefix": config.pyproject_prefix,
-            "registryUrls": [_ACC_PY_REGISTRY],
         })
     if config.precommit:
         package_rules.append({
             "matchManagers": ["pre-commit"],
             "commitMessagePrefix": config.precommit_prefix,
-            "registryUrls": [_ACC_PY_REGISTRY],
         })
     if config.submodules:
         package_rules.append({
