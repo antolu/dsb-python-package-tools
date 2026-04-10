@@ -10,7 +10,9 @@
 #   RENOVATE_IMAGE_TAG  - Renovate image tag to use (default: latest)
 
 .renovate:
+  stage: .post
   image: renovate/renovate:${RENOVATE_IMAGE_TAG:-latest}
+  allow_failure: true
   variables:
     RENOVATE_PLATFORM: gitlab
     RENOVATE_ENDPOINT: "$CI_SERVER_URL/api/v4"
@@ -34,7 +36,9 @@ renovate:
   extends: .renovate
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
-    - when: manual
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+    - when: never
   # Schedule: run weekly on Monday at 06:00 UTC.
   # Configure via GitLab UI or API: Settings > CI/CD > Schedules
   # Cron: 0 6 * * 1
