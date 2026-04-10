@@ -99,3 +99,75 @@ dsb-pkginit is also deployed on the TN Acc-Py distribution, runnable as
 ::
 
     acc-py app run dsb-devtools pkginit
+
+================
+Renovate setup
+================
+
+The :code:`dsb-renovate` entrypoint sets up `Renovate <https://docs.renovatebot.com/>`_ for automated
+dependency update MRs on a GitLab project. Renovate runs as a self-hosted CI job — no external
+service is used.
+
+The following are managed automatically:
+
+- Python dependencies in :code:`pyproject.toml` (pep621 manager)
+- Pre-commit hook revisions and :code:`additional_dependencies` in :code:`.pre-commit-config.yaml`
+- Git submodule tags (semver versioning)
+
+Renovate never auto-merges. All updates are opened as MRs for human review.
+
+Prerequisites
+-------------
+
+- A GitLab access token with :code:`api` scope (PAT, project token, or group token)
+- The token owner must have **Maintainer** role on the project (required to create CI variables and pipeline schedules)
+
+Commands
+--------
+
+Set up Renovate for a project (writes :code:`renovate.json`, creates CI schedule, sets :code:`RENOVATE_TOKEN`):
+
+::
+
+    dsb-renovate setup
+
+Update an existing Renovate schedule:
+
+::
+
+    dsb-renovate update
+
+Remove the Renovate schedule and optionally the CI variable:
+
+::
+
+    dsb-renovate teardown
+
+All commands auto-detect the project from the current git remote. The token is read from
+:code:`--token`, or falls back to the :code:`RENOVATE_TOKEN` / :code:`GITLAB_TOKEN` environment variables,
+or prompts interactively.
+
+Integration with dsb-pkginit
+-----------------------------
+
+When running :code:`dsb-pkginit` with CI enabled and a real GitLab URL, the tool will offer to run
+:code:`dsb-renovate setup` at the end of package initialization. The Renovate manager options
+(pyproject, pre-commit, submodules) appear in the configuration summary table and can be
+adjusted before confirming.
+
+Reusing the CI template
+------------------------
+
+The Renovate CI job is defined in :code:`.gitlab/renovate.gitlab-ci.yml`. To reuse it in another
+project, include the file and extend the hidden job:
+
+.. code-block:: yaml
+
+    include:
+      - project: dsb/devops/devtools
+        file: .gitlab/renovate.gitlab-ci.yml
+
+    my_renovate:
+      extends: .renovate
+
+The :code:`RENOVATE_TOKEN` CI variable must be set on the project.
