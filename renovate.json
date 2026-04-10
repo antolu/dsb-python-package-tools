@@ -14,12 +14,15 @@
       "/(^|/)pyproject\\.toml$/"
     ]
   },
-  "pypi": {
-    "registryUrls": [
-      "https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/"
-    ]
-  },
   "packageRules": [
+    {
+      "matchDatasources": [
+        "pypi"
+      ],
+      "registryUrls": [
+        "https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/"
+      ]
+    },
     {
       "matchDatasources": [
         "python-version"
