@@ -27,6 +27,7 @@ class RenovateConfig:
 
 
 _GITLAB_BASE = "https://gitlab.cern.ch"
+_ACC_PY_REGISTRY = "https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/"
 _SSH_URL_RE = re.compile(
     r"^ssh://(?:git@)?gitlab\.cern\.ch(?::\d+)?/(?P<path>.+?)(?:\.git)?$"
 )
@@ -194,11 +195,13 @@ def write_renovate_json(
         package_rules.append({
             "matchManagers": ["pep621"],
             "commitMessagePrefix": config.pyproject_prefix,
+            "registryUrls": [_ACC_PY_REGISTRY],
         })
     if config.precommit:
         package_rules.append({
             "matchManagers": ["pre-commit"],
             "commitMessagePrefix": config.precommit_prefix,
+            "registryUrls": [_ACC_PY_REGISTRY],
         })
     if config.submodules:
         package_rules.append({

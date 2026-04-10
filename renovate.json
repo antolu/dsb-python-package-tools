@@ -21,9 +21,28 @@
   "packageRules": [
     {
       "matchManagers": [
+        "pep621"
+      ],
+      "commitMessagePrefix": "chore(deps):",
+      "registryUrls": [
+        "https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/"
+      ]
+    },
+    {
+      "matchManagers": [
+        "pre-commit"
+      ],
+      "commitMessagePrefix": "chore(hooks):",
+      "registryUrls": [
+        "https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/"
+      ]
+    },
+    {
+      "matchManagers": [
         "gitSubmodules"
       ],
-      "versioning": "semver"
+      "versioning": "semver",
+      "commitMessagePrefix": "chore(submodules):"
     }
   ]
 }
