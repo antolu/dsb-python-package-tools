@@ -4,20 +4,16 @@
     "config:base"
   ],
   "automerge": false,
-  "managers": [
-    {
-      "managerName": "pep621",
-      "fileMatch": [
-        "(^|/)pyproject\\.toml$"
-      ]
-    },
-    {
-      "managerName": "gitSubmodules"
-    },
-    {
-      "managerName": "pre-commit"
-    }
+  "enabledManagers": [
+    "pep621",
+    "git-submodules",
+    "pre-commit"
   ],
+  "pep621": {
+    "managerFilePatterns": [
+      "/(^|/)pyproject\\.toml$/"
+    ]
+  },
   "packageRules": [
     {
       "matchManagers": [
@@ -39,7 +35,7 @@
     },
     {
       "matchManagers": [
-        "gitSubmodules"
+        "git-submodules"
       ],
       "versioning": "semver",
       "commitMessagePrefix": "chore(submodules):"

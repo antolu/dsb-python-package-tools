@@ -188,10 +188,10 @@ def _load_renovate_json(cwd: pathlib.Path | None = None) -> RenovateConfig | Non
         return None
 
     cfg = RenovateConfig()
-    managers = {m.get("managerName") for m in data.get("managers", [])}
-    cfg.pyproject = "pep621" in managers
-    cfg.precommit = "pre-commit" in managers
-    cfg.submodules = "gitSubmodules" in managers
+    enabled = set(data.get("enabledManagers", []))
+    cfg.pyproject = "pep621" in enabled
+    cfg.precommit = "pre-commit" in enabled
+    cfg.submodules = "git-submodules" in enabled
 
     for rule in data.get("packageRules", []):
         match_managers = rule.get("matchManagers", [])
@@ -222,16 +222,13 @@ def write_renovate_json(
     config: RenovateConfig,
     dest: pathlib.Path | None = None,
 ) -> None:
-    managers = []
+    enabled_managers = []
     if config.pyproject:
-        managers.append({
-            "managerName": "pep621",
-            "fileMatch": ["(^|/)pyproject\\.toml$"],
-        })
+        enabled_managers.append("pep621")
     if config.submodules:
-        managers.append({"managerName": "gitSubmodules"})
+        enabled_managers.append("git-submodules")
     if config.precommit:
-        managers.append({"managerName": "pre-commit"})
+        enabled_managers.append("pre-commit")
 
     package_rules = []
     if config.pyproject:
@@ -248,7 +245,7 @@ def write_renovate_json(
         })
     if config.submodules:
         package_rules.append({
-            "matchManagers": ["gitSubmodules"],
+            "matchManagers": ["git-submodules"],
             "versioning": "semver",
             "commitMessagePrefix": config.submodules_prefix,
         })
@@ -257,8 +254,10 @@ def write_renovate_json(
         "$schema": "https://docs.renovatebot.com/renovate-schema.json",
         "extends": ["config:base"],
         "automerge": False,
-        "managers": managers,
+        "enabledManagers": enabled_managers,
     }
+    if config.pyproject:
+        payload["pep621"] = {"managerFilePatterns": ["/(^|/)pyproject\\.toml$/"]}
     if package_rules:
         payload["packageRules"] = package_rules
 
