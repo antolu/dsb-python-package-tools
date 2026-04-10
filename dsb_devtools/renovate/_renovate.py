@@ -21,6 +21,9 @@ class RenovateConfig:
     pyproject: bool = True
     precommit: bool = False
     submodules: bool = False
+    pyproject_prefix: str = "chore(deps):"
+    precommit_prefix: str = "chore(hooks):"
+    submodules_prefix: str = "chore(submodules):"
 
 
 _GITLAB_BASE = "https://gitlab.cern.ch"
@@ -187,10 +190,21 @@ def write_renovate_json(
         managers.append({"managerName": "pre-commit"})
 
     package_rules = []
+    if config.pyproject:
+        package_rules.append({
+            "matchManagers": ["pep621"],
+            "commitMessagePrefix": config.pyproject_prefix,
+        })
+    if config.precommit:
+        package_rules.append({
+            "matchManagers": ["pre-commit"],
+            "commitMessagePrefix": config.precommit_prefix,
+        })
     if config.submodules:
         package_rules.append({
             "matchManagers": ["gitSubmodules"],
             "versioning": "semver",
+            "commitMessagePrefix": config.submodules_prefix,
         })
 
     payload: dict = {
@@ -218,14 +232,29 @@ def _prompt_renovate_config(
     cfg.pyproject = survey.routines.inquire(
         "Renovate: manage pyproject.toml dependencies? ", default=cfg.pyproject
     )
+    if cfg.pyproject:
+        cfg.pyproject_prefix = survey.routines.input(
+            "Renovate: commit prefix for pyproject updates? ",
+            value=cfg.pyproject_prefix,
+        )
     if has_precommit:
         cfg.precommit = survey.routines.inquire(
             "Renovate: manage pre-commit hook revisions? ", default=cfg.precommit
         )
+        if cfg.precommit:
+            cfg.precommit_prefix = survey.routines.input(
+                "Renovate: commit prefix for pre-commit updates? ",
+                value=cfg.precommit_prefix,
+            )
     if has_submodules:
         cfg.submodules = survey.routines.inquire(
             "Renovate: manage git submodule tags? ", default=cfg.submodules
         )
+        if cfg.submodules:
+            cfg.submodules_prefix = survey.routines.input(
+                "Renovate: commit prefix for submodule updates? ",
+                value=cfg.submodules_prefix,
+            )
 
     return cfg
 

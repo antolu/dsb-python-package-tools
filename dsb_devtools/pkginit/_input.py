@@ -127,13 +127,22 @@ class TemplateConfig:
             table.add_row("Use Java CI", "Yes" if self.use_java else "No")
         if self.renovate is not None:
             table.add_row(
-                "Renovate: pyproject", "Yes" if self.renovate.pyproject else "No"
+                "Renovate: pyproject",
+                f"Yes ({self.renovate.pyproject_prefix})"
+                if self.renovate.pyproject
+                else "No",
             )
             table.add_row(
-                "Renovate: pre-commit", "Yes" if self.renovate.precommit else "No"
+                "Renovate: pre-commit",
+                f"Yes ({self.renovate.precommit_prefix})"
+                if self.renovate.precommit
+                else "No",
             )
             table.add_row(
-                "Renovate: submodules", "Yes" if self.renovate.submodules else "No"
+                "Renovate: submodules",
+                f"Yes ({self.renovate.submodules_prefix})"
+                if self.renovate.submodules
+                else "No",
             )
         else:
             table.add_row("Set up Renovate", "No")
@@ -835,13 +844,30 @@ def _maybe_read_renovate(
         "Renovate: manage pyproject.toml dependencies? ",
         default=config.renovate.pyproject,
     )
+    if config.renovate.pyproject:
+        config.renovate.pyproject_prefix = routines.input(
+            "Renovate: commit prefix for pyproject updates? ",
+            value=config.renovate.pyproject_prefix,
+        )
+
     config.renovate.precommit = routines.inquire(
         "Renovate: manage pre-commit hook revisions? ",
         default=config.renovate.precommit,
     )
+    if config.renovate.precommit:
+        config.renovate.precommit_prefix = routines.input(
+            "Renovate: commit prefix for pre-commit updates? ",
+            value=config.renovate.precommit_prefix,
+        )
+
     config.renovate.submodules = routines.inquire(
         "Renovate: manage git submodule tags? ",
         default=config.renovate.submodules,
     )
+    if config.renovate.submodules:
+        config.renovate.submodules_prefix = routines.input(
+            "Renovate: commit prefix for submodule updates? ",
+            value=config.renovate.submodules_prefix,
+        )
 
     return config
