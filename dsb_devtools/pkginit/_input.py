@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import configparser
 import dataclasses
+import enum
 import io
 import keyword
 import os
@@ -31,6 +32,30 @@ import typing
 import rich.console
 import rich.table
 from survey import routines, widgets
+
+from ..renovate._renovate import RenovateConfig
+
+
+class PackageUrl(enum.StrEnum):
+    BARE = "bare"
+
+
+class _InputField(enum.IntEnum):
+    DONE = 0
+    AUTHOR_NAME = 1
+    AUTHOR_EMAIL = 2
+    PACKAGE_NAME = 3
+    PACKAGE_MODULE = 4
+    PACKAGE_URL = 5
+    PACKAGE_DESCRIPTION = 6
+    PACKAGE_DIR = 7
+    USE_DOCS = 8
+    USE_TESTS = 9
+    USE_PRECOMMIT = 10
+    USE_CI = 11
+    USE_JAVA = 12
+    RENOVATE = 13
+
 
 _EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 _REPO_REGEX = re.compile(
@@ -74,6 +99,9 @@ class TemplateConfig:
     use_java: bool | None = None
     """ Use CI image that supports Java. """
 
+    renovate: RenovateConfig | None = None
+    """ Renovate dependency update configuration. None means skip Renovate setup. """
+
     no_confirm: bool = False
 
     def __str__(self) -> str:
@@ -97,6 +125,27 @@ class TemplateConfig:
         table.add_row("Include CI", "Yes" if self.use_ci else "No")
         if self.use_ci:
             table.add_row("Use Java CI", "Yes" if self.use_java else "No")
+        if self.renovate is not None:
+            table.add_row(
+                "Renovate: pyproject",
+                f"Yes ({self.renovate.pyproject_prefix})"
+                if self.renovate.pyproject
+                else "No",
+            )
+            table.add_row(
+                "Renovate: pre-commit",
+                f"Yes ({self.renovate.precommit_prefix})"
+                if self.renovate.precommit
+                else "No",
+            )
+            table.add_row(
+                "Renovate: submodules",
+                f"Yes ({self.renovate.submodules_prefix})"
+                if self.renovate.submodules
+                else "No",
+            )
+        else:
+            table.add_row("Set up Renovate", "No")
 
         console = rich.console.Console(file=writer)
         console.print(table)
@@ -141,8 +190,8 @@ def make_parser(
     parser.add_argument(
         "--url",
         type=str,
-        default="bare",
-        help='The GitLab URL of the package. Use "bare" to not use git.',
+        default=PackageUrl.BARE,
+        help=f'The GitLab URL of the package. Use "{PackageUrl.BARE}" to not use git.',
     )
     parser.add_argument(
         "--description",
@@ -283,6 +332,8 @@ def read_input(config: TemplateConfig, *, force: bool = False) -> TemplateConfig
     # Boolean flags are not prompted — defaults are applied here so the summary
     # screen shows correct values. CLI-provided values are preserved.
     set_config_defaults(config)
+    if config.use_ci and config.package_url != PackageUrl.BARE:
+        _maybe_read_renovate(config, force=force)
 
     return config
 
@@ -299,6 +350,16 @@ def set_config_defaults(config: TemplateConfig) -> None:
         config.use_tests = True
     if config.use_java is None:
         config.use_java = False
+    if (
+        config.renovate is None
+        and config.use_ci
+        and config.package_url != PackageUrl.BARE
+    ):
+        config.renovate = RenovateConfig(
+            pyproject=True,
+            precommit=bool(config.use_precommit),
+            submodules=False,
+        )
 
 
 def confirm_input(config: TemplateConfig) -> bool:
@@ -378,6 +439,9 @@ def ask_specific_input(config: TemplateConfig) -> TemplateConfig:  # noqa: PLR09
             selections.append(
                 f"Use CI image with JDK: {'Yes' if config.use_java else 'No'}"
             )
+        if config.use_ci and config.package_url != PackageUrl.BARE:
+            renovate_val = "No" if config.renovate is None else "Yes"
+            selections.append(f"Set up Renovate: {renovate_val}")
 
         return selections
 
@@ -385,36 +449,38 @@ def ask_specific_input(config: TemplateConfig) -> TemplateConfig:  # noqa: PLR09
     while index := routines.select(
         "What would you like to change? ",
         options=make_options(),
-        view_max=13,
+        view_max=14,
     ):
-        if index == 0:
+        if index == _InputField.DONE:
             break
-        if index == 1:
+        if index == _InputField.AUTHOR_NAME:
             _maybe_read_git_user_name(config, force=True)
-        elif index == 2:
+        elif index == _InputField.AUTHOR_EMAIL:
             _maybe_read_git_user_email(config, force=True)
-        elif index == 3:
+        elif index == _InputField.PACKAGE_NAME:
             _maybe_read_package_name(config, reponame_hint=reponame_hint, force=True)
-        elif index == 4:
+        elif index == _InputField.PACKAGE_MODULE:
             _maybe_read_package_module(config, force=True)
-        elif index == 5:
+        elif index == _InputField.PACKAGE_URL:
             _, reponame_hint = _maybe_ask_repo_url(config, force=True)
-        elif index == 6:
+        elif index == _InputField.PACKAGE_DESCRIPTION:
             _maybe_ask_package_description(config, force=True)
-        elif index == 7:
+        elif index == _InputField.PACKAGE_DIR:
             _maybe_read_package_dir(config, force=True)
-        elif index == 8:
+        elif index == _InputField.USE_DOCS:
             _maybe_read_use_docs(config, force=True)
-        elif index == 9:
+        elif index == _InputField.USE_TESTS:
             _maybe_read_use_tests(config, force=True)
-        elif index == 10:
+        elif index == _InputField.USE_PRECOMMIT:
             _maybe_read_use_precommit(config, force=True)
-        elif index == 11:
+        elif index == _InputField.USE_CI:
             _maybe_read_use_ci(config, force=True)
             if config.use_ci:
                 _maybe_read_use_java(config, force=True)
-        elif index == 12:
+        elif index == _InputField.USE_JAVA:
             _maybe_read_use_java(config, force=True)
+        elif index == _InputField.RENOVATE:
+            _maybe_read_renovate(config, force=True)
 
     return config
 
@@ -436,9 +502,9 @@ def _parse_repo_url(package_url: str) -> tuple[str, str]:
     Raises
     ------
     ValueError
-        If the URL is invalid or is "bare".
+        If the URL is invalid or is PackageUrl.BARE.
     """
-    if package_url == "bare":
+    if package_url == PackageUrl.BARE:
         msg = "Cannot parse URL for a package without git"
         raise ValueError(msg)
 
@@ -522,20 +588,20 @@ def _maybe_ask_repo_url(
     if config.package_url == "" or force:
 
         def validate_url(url: str) -> None:
-            if url == "bare":
+            if url == PackageUrl.BARE:
                 return
             if not _REPO_REGEX.match(url):
                 msg = f"{url} is not a valid CERN gitlab repo"
                 raise widgets.Abort(msg)
 
         package_url = routines.input(
-            'Gitlab repo URL: (use "bare" to to set up without git) ',
+            f'Gitlab repo URL: (use "{PackageUrl.BARE}" to set up without git) ',
             validate=validate_url,
         )
         config.package_url = package_url
-        if package_url != "bare":
+        if package_url != PackageUrl.BARE:
             _, reponame_hint = _read_repo_url(package_url)
-    elif config.package_url != "bare":
+    elif config.package_url != PackageUrl.BARE:
         _, reponame_hint = _read_repo_url(config.package_url)
 
     return config, reponame_hint
@@ -750,5 +816,58 @@ def _maybe_read_use_java(
             "Use a CI image that supports Java? ", default=False
         )
         config.use_java = use_java
+
+    return config
+
+
+def _maybe_read_renovate(
+    config: TemplateConfig, *, force: bool = False
+) -> TemplateConfig:
+    if config.renovate is not None and not force:
+        return config
+
+    use_renovate = routines.inquire(
+        "Set up Renovate dependency updates? ", default=True
+    )
+    if not use_renovate:
+        config.renovate = None
+        return config
+
+    if config.renovate is None:
+        config.renovate = RenovateConfig(
+            pyproject=True,
+            precommit=bool(config.use_precommit),
+            submodules=False,
+        )
+
+    config.renovate.pyproject = routines.inquire(
+        "Renovate: manage pyproject.toml dependencies? ",
+        default=config.renovate.pyproject,
+    )
+    if config.renovate.pyproject:
+        config.renovate.pyproject_prefix = routines.input(
+            "Renovate: commit prefix for pyproject updates? ",
+            value=config.renovate.pyproject_prefix,
+        )
+
+    config.renovate.precommit = routines.inquire(
+        "Renovate: manage pre-commit hook revisions? ",
+        default=config.renovate.precommit,
+    )
+    if config.renovate.precommit:
+        config.renovate.precommit_prefix = routines.input(
+            "Renovate: commit prefix for pre-commit updates? ",
+            value=config.renovate.precommit_prefix,
+        )
+
+    config.renovate.submodules = routines.inquire(
+        "Renovate: manage git submodule tags? ",
+        default=config.renovate.submodules,
+    )
+    if config.renovate.submodules:
+        config.renovate.submodules_prefix = routines.input(
+            "Renovate: commit prefix for submodule updates? ",
+            value=config.renovate.submodules_prefix,
+        )
 
     return config

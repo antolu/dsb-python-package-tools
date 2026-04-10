@@ -16,7 +16,9 @@ import ruamel.yaml
 import survey
 import tomlkit
 
+from ..renovate._renovate import setup as renovate_setup
 from ._input import (
+    PackageUrl,
     TemplateConfig,
     ask_specific_input,
     assert_input_valid,
@@ -181,7 +183,7 @@ def pkginit(config: TemplateConfig) -> None:
             _edit_gitlab_ci(tmp_dir / ".gitlab-ci.yml", config)
 
         # set up git and pre-commit
-        if config.package_url != "bare":
+        if config.package_url != PackageUrl.BARE:
             try:
                 _setup_vcs(tmp_dir, config.package_url)
             except RuntimeError as e:
@@ -192,7 +194,7 @@ def pkginit(config: TemplateConfig) -> None:
                     f"Error: {e}"
                 )
         else:
-            print_success("Skipping git setup as package_url is 'bare'")
+            print_success(f"Skipping git setup as package_url is '{PackageUrl.BARE}'")
 
         if config.use_precommit:
             try:
@@ -214,6 +216,22 @@ def pkginit(config: TemplateConfig) -> None:
         "Run `pip install -e . --config-settings editable_mode=compat` to get started"
     )
 
+    _maybe_setup_renovate(config, dest_dir)
+
+
+def _maybe_setup_renovate(config: TemplateConfig, dest_dir: pathlib.Path) -> None:
+    if (
+        config.renovate is None
+        or not config.use_ci
+        or config.package_url == PackageUrl.BARE
+    ):
+        return
+    renovate_setup(
+        project_path=resolve_git_url(config).removeprefix("https://gitlab.cern.ch/"),
+        renovate_config=config.renovate,
+        dest=dest_dir,
+    )
+
 
 def _edit_gitignore(gitignore_path: pathlib.Path, package_module: str) -> None:
     _replace_in_file(gitignore_path, package_name=package_module)
@@ -229,7 +247,7 @@ def _make_readme(
     if isinstance(package_name, TemplateConfig):
         package_name_s = package_name.package_name
         package_description = package_name.package_description
-        if package_name.package_url != "bare" and package_name.use_docs:
+        if package_name.package_url != PackageUrl.BARE and package_name.use_docs:
             docs_url = resolve_docs_url(package_name)
     else:
         package_name_s = package_name
@@ -265,7 +283,7 @@ def _edit_pyproject(pyproject_path: pathlib.Path, config: TemplateConfig) -> Non
     toml["project"]["authors"][0]["name"] = config.author_name  # type: ignore[index]
     toml["project"]["authors"][0]["email"] = config.author_email  # type: ignore[index]
 
-    if config.package_url != "bare":
+    if config.package_url != PackageUrl.BARE:
         toml["project"]["urls"]["homepage"] = resolve_git_url(config)  # type: ignore[index]
         toml["project"]["urls"]["repository"] = resolve_git_url(  # type: ignore[index]
             config
