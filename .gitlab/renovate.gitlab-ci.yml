@@ -23,8 +23,10 @@
     NODE_EXTRA_CA_CERTS: /tmp/cern-ca-bundle.pem
   before_script:
     - |
-      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" >> /tmp/cern-ca-bundle.pem
-      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" >> /tmp/cern-ca-bundle.pem
+      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" -o /tmp/cern-root.der
+      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" -o /tmp/cern-int.der
+      openssl x509 -inform DER -in /tmp/cern-root.der >> /tmp/cern-ca-bundle.pem
+      openssl x509 -inform DER -in /tmp/cern-int.der >> /tmp/cern-ca-bundle.pem
   script:
     - |
       if [ -z "$RENOVATE_TOKEN" ]; then
