@@ -16,6 +16,7 @@ import ruamel.yaml
 import survey
 import tomlkit
 
+from ..renovate._renovate import setup as renovate_setup
 from ._input import (
     TemplateConfig,
     ask_specific_input,
@@ -213,6 +214,21 @@ def pkginit(config: TemplateConfig) -> None:
     print(
         "Run `pip install -e . --config-settings editable_mode=compat` to get started"
     )
+
+    _maybe_setup_renovate(config)
+
+
+def _maybe_setup_renovate(config: TemplateConfig) -> None:
+    if (
+        config.use_ci
+        and config.package_url != "bare"
+        and survey.routines.inquire(
+            "Set up Renovate dependency updates for this project? ", default=True
+        )
+    ):
+        renovate_setup(
+            project_path=resolve_git_url(config).removeprefix("https://gitlab.cern.ch/")
+        )
 
 
 def _edit_gitignore(gitignore_path: pathlib.Path, package_module: str) -> None:
