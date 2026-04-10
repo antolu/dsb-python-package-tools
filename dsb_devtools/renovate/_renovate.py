@@ -165,13 +165,56 @@ def _set_ci_variable(
         )
 
 
+def _git_root() -> pathlib.Path:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return pathlib.Path(result.stdout.strip())
+    except subprocess.CalledProcessError:
+        return pathlib.Path(".")
+
+
+def _load_renovate_json(cwd: pathlib.Path | None = None) -> RenovateConfig | None:
+    p = (cwd or _git_root()) / "renovate.json"
+    if not p.exists():
+        return None
+    try:
+        data = json.loads(p.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+
+    cfg = RenovateConfig()
+    managers = {m.get("managerName") for m in data.get("managers", [])}
+    cfg.pyproject = "pep621" in managers
+    cfg.precommit = "pre-commit" in managers
+    cfg.submodules = "gitSubmodules" in managers
+
+    for rule in data.get("packageRules", []):
+        match_managers = rule.get("matchManagers", [])
+        prefix = rule.get("commitMessagePrefix")
+        if not prefix:
+            continue
+        if "pep621" in match_managers:
+            cfg.pyproject_prefix = prefix
+        if "pre-commit" in match_managers:
+            cfg.precommit_prefix = prefix
+        if "gitSubmodules" in match_managers:
+            cfg.submodules_prefix = prefix
+
+    return cfg
+
+
 def _detect_has_submodules(cwd: pathlib.Path | None = None) -> bool:
-    p = (cwd or pathlib.Path(".")) / ".gitmodules"
+    p = (cwd or _git_root()) / ".gitmodules"
     return p.exists() and p.stat().st_size > 0
 
 
 def _detect_has_precommit(cwd: pathlib.Path | None = None) -> bool:
-    p = (cwd or pathlib.Path(".")) / ".pre-commit-config.yaml"
+    p = (cwd or _git_root()) / ".pre-commit-config.yaml"
     return p.exists()
 
 
@@ -399,10 +442,22 @@ def update(
         s for s in schedules if "renovate" in s["description"].lower()
     ]
 
+    existing_config = _load_renovate_json()
+    if existing_config:
+        _print_info("Loaded existing renovate.json as defaults")
+
     if not renovate_schedules:
         _print_info("No existing Renovate schedules found — creating one")
-        setup(project_path=project_path, token=token, set_token_var=False)
+        setup(
+            project_path=project_path,
+            token=token,
+            renovate_config=existing_config,
+            set_token_var=False,
+        )
         return
+
+    renovate_config = _prompt_renovate_config(default=existing_config)
+    write_renovate_json(renovate_config)
 
     for sched in renovate_schedules:
         _print_info(
