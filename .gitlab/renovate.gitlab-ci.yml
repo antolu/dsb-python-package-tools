@@ -1,0 +1,40 @@
+# Reusable Renovate job template.
+# Include this file and extend .renovate to add Renovate to any project.
+#
+# Required CI variable:
+#   RENOVATE_TOKEN  - GitLab access token (PAT, project, or group token)
+#                     Scopes: api, read_repository, write_repository
+#
+# Optional CI variable:
+#   RENOVATE_AUTOMERGE  - Set to "true" to enable automerge (default: false)
+#   RENOVATE_IMAGE_TAG  - Renovate image tag to use (default: latest)
+
+.renovate:
+  image: renovate/renovate:${RENOVATE_IMAGE_TAG:-latest}
+  variables:
+    RENOVATE_PLATFORM: gitlab
+    RENOVATE_ENDPOINT: "$CI_SERVER_URL/api/v4"
+    RENOVATE_REPOSITORIES: "$CI_PROJECT_PATH"
+    RENOVATE_AUTODISCOVER: "false"
+    LOG_LEVEL: info
+  script:
+    - |
+      if [ -z "$RENOVATE_TOKEN" ]; then
+        echo "ERROR: RENOVATE_TOKEN is not set."
+        echo "Set a masked CI variable with a GitLab access token (scopes: api, read_repository, write_repository)."
+        exit 1
+      fi
+    - renovate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - when: never
+
+
+renovate:
+  extends: .renovate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - when: manual
+  # Schedule: run weekly on Monday at 06:00 UTC.
+  # Configure via GitLab UI or API: Settings > CI/CD > Schedules
+  # Cron: 0 6 * * 1

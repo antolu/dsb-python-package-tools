@@ -4,6 +4,7 @@
 include:
  - project: acc-co/devops/python/acc-py-gitlab-ci-templates
    file: v2/python.gitlab-ci.yml
+ - local: .gitlab/renovate.gitlab-ci.yml
 
 variables:
   project_name: "dsb_devtools"
