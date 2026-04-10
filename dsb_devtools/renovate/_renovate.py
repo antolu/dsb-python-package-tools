@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import os
+import pathlib
 import re
 import subprocess
 import sys
@@ -12,6 +14,14 @@ import urllib.request
 
 import rich
 import survey
+
+
+@dataclasses.dataclass
+class RenovateConfig:
+    pyproject: bool = True
+    precommit: bool = False
+    submodules: bool = False
+
 
 _GITLAB_BASE = "https://gitlab.cern.ch"
 _SSH_URL_RE = re.compile(
@@ -151,6 +161,75 @@ def _set_ci_variable(
         )
 
 
+def _detect_has_submodules(cwd: pathlib.Path | None = None) -> bool:
+    p = (cwd or pathlib.Path(".")) / ".gitmodules"
+    return p.exists() and p.stat().st_size > 0
+
+
+def _detect_has_precommit(cwd: pathlib.Path | None = None) -> bool:
+    p = (cwd or pathlib.Path(".")) / ".pre-commit-config.yaml"
+    return p.exists()
+
+
+def write_renovate_json(
+    config: RenovateConfig,
+    dest: pathlib.Path | None = None,
+) -> None:
+    managers = []
+    if config.pyproject:
+        managers.append({
+            "managerName": "pep621",
+            "fileMatch": ["(^|/)pyproject\\.toml$"],
+        })
+    if config.submodules:
+        managers.append({"managerName": "gitSubmodules"})
+    if config.precommit:
+        managers.append({"managerName": "pre-commit"})
+
+    package_rules = []
+    if config.submodules:
+        package_rules.append({
+            "matchManagers": ["gitSubmodules"],
+            "versioning": "semver",
+        })
+
+    payload: dict = {
+        "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+        "extends": ["config:base"],
+        "automerge": False,
+        "managers": managers,
+    }
+    if package_rules:
+        payload["packageRules"] = package_rules
+
+    out = (dest or pathlib.Path(".")) / "renovate.json"
+    out.write_text(json.dumps(payload, indent=2) + "\n")
+    _print_ok(f"Written {out}")
+
+
+def _prompt_renovate_config(
+    default: RenovateConfig | None = None,
+    cwd: pathlib.Path | None = None,
+) -> RenovateConfig:
+    cfg = default or RenovateConfig()
+    has_submodules = _detect_has_submodules(cwd)
+    has_precommit = _detect_has_precommit(cwd)
+
+    cfg.pyproject = survey.routines.inquire(
+        "Renovate: manage pyproject.toml dependencies? ", default=cfg.pyproject
+    )
+    if has_precommit:
+        cfg.precommit = survey.routines.inquire(
+            "Renovate: manage pre-commit hook revisions? ", default=cfg.precommit
+        )
+    if has_submodules:
+        cfg.submodules = survey.routines.inquire(
+            "Renovate: manage git submodule tags? ", default=cfg.submodules
+        )
+
+    return cfg
+
+
 def _resolve_project_path(project_path: str | None) -> str:
     if project_path:
         return project_path
@@ -181,9 +260,14 @@ def _resolve_token(token: str | None) -> str:
 def setup(
     project_path: str | None = None,
     token: str | None = None,
+    renovate_config: RenovateConfig | None = None,
+    dest: pathlib.Path | None = None,
     *,
     set_token_var: bool = True,
 ) -> None:
+    renovate_config = _prompt_renovate_config(default=renovate_config, cwd=dest)
+    write_renovate_json(renovate_config, dest=dest)
+
     token = _resolve_token(token)
     project_path = _resolve_project_path(project_path)
 
