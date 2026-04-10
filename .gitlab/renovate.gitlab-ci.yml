@@ -19,7 +19,7 @@
     RENOVATE_ENDPOINT: "$CI_SERVER_URL/api/v4"
     RENOVATE_REPOSITORIES: "$CI_PROJECT_PATH"
     RENOVATE_AUTODISCOVER: "false"
-    LOG_LEVEL: info
+    LOG_LEVEL: debug
   script:
     - |
       if [ -z "$RENOVATE_TOKEN" ]; then
