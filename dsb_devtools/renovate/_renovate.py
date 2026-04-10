@@ -231,7 +231,6 @@ def write_renovate_json(
         enabled_managers.append("pre-commit")
 
     package_rules: list[dict] = [
-        {"matchDatasources": ["pypi"], "registryUrls": [_ACC_PY_REGISTRY]},
         {"matchDatasources": ["python-version"], "enabled": False},
     ]
     if config.pyproject:
@@ -256,6 +255,7 @@ def write_renovate_json(
         "extends": ["config:base"],
         "automerge": False,
         "enabledManagers": enabled_managers,
+        "pypi": {"registryUrls": [_ACC_PY_REGISTRY]},
     }
     if config.pyproject:
         payload["pep621"] = {"managerFilePatterns": ["/(^|/)pyproject\\.toml$/"]}
