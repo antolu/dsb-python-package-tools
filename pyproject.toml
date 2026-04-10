@@ -68,6 +68,7 @@ include-package-data = true
 [project.scripts]
 dsb-pkginit = "dsb_devtools.pkginit.__main__:main"
 dsb-devtools = "dsb_devtools.__main__:entrypoint"
+dsb-renovate = "dsb_devtools.renovate.__main__:main"
 
 [tool.black]
 target-version = ["py311"]
