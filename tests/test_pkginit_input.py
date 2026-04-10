@@ -195,8 +195,10 @@ def test_all_positive_flags() -> None:
 
 
 @patch("dsb_devtools.pkginit._input.routines.inquire")
-def test_maybe_read_use_ci_skips_when_none(mock_inquire: MagicMock) -> None:
-    """It should NOT ask for input when use_ci is None (defaults are applied later)."""
+def test_maybe_read_use_ci_prompts_when_none(mock_inquire: MagicMock) -> None:
+    """It should prompt when use_ci is None (not set via CLI)."""
+    mock_inquire.return_value = True
+
     config = TemplateConfig(
         author_name="Me",
         author_email="me@cern.ch",
@@ -209,8 +211,8 @@ def test_maybe_read_use_ci_skips_when_none(mock_inquire: MagicMock) -> None:
 
     _maybe_read_use_ci(config, force=False)
 
-    mock_inquire.assert_not_called()
-    assert config.use_ci is None
+    mock_inquire.assert_called_once()
+    assert config.use_ci is True
 
 
 @patch("dsb_devtools.pkginit._input.routines.inquire")
@@ -256,8 +258,10 @@ def test_maybe_read_use_ci_prompts_when_force(mock_inquire: MagicMock) -> None:
 
 
 @patch("dsb_devtools.pkginit._input.routines.inquire")
-def test_maybe_read_use_docs_skips_when_none(mock_inquire: MagicMock) -> None:
-    """_maybe_read_use_docs should NOT prompt when value is None (defaults later)."""
+def test_maybe_read_use_docs_prompts_when_none(mock_inquire: MagicMock) -> None:
+    """_maybe_read_use_docs should prompt when value is None (not set via CLI)."""
+    mock_inquire.return_value = True
+
     config1 = TemplateConfig(
         author_name="Test",
         author_email="test@example.com",
@@ -268,9 +272,10 @@ def test_maybe_read_use_docs_skips_when_none(mock_inquire: MagicMock) -> None:
         use_docs=None,
     )
     _maybe_read_use_docs(config1, force=False)
-    mock_inquire.assert_not_called()
-    assert config1.use_docs is None  # should NOT prompt
+    mock_inquire.assert_called_once()
+    assert config1.use_docs is True
     mock_inquire.reset_mock()
+
     config2 = TemplateConfig(
         author_name="Test",
         author_email="test@example.com",
@@ -281,7 +286,7 @@ def test_maybe_read_use_docs_skips_when_none(mock_inquire: MagicMock) -> None:
         use_docs=False,
     )
     _maybe_read_use_docs(config2, force=False)
-    assert mock_inquire.call_count == 0
+    mock_inquire.assert_not_called()  # already set, should not prompt
 
 
 @patch("dsb_devtools.pkginit._input.routines.inquire")
