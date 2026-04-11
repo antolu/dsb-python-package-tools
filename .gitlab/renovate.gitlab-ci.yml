@@ -20,11 +20,13 @@
     RENOVATE_REPOSITORIES: "$CI_PROJECT_PATH"
     RENOVATE_AUTODISCOVER: "false"
     LOG_LEVEL: debug
-    NODE_EXTRA_CA_CERTS: /tmp/cern-ca-bundle.pem
+    NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
+    SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
   before_script:
     - |
-      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" >> /tmp/cern-ca-bundle.pem
-      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" >> /tmp/cern-ca-bundle.pem
+      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" > /usr/local/share/ca-certificates/cern-root.crt
+      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" > /usr/local/share/ca-certificates/cern-int.crt
+      update-ca-certificates
   script:
     - |
       if [ -z "$RENOVATE_TOKEN" ]; then
