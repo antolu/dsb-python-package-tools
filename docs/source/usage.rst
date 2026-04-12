@@ -170,4 +170,34 @@ project, include the file and extend the hidden job:
     my_renovate:
       extends: .renovate
 
-The :code:`RENOVATE_TOKEN` CI variable must be set on the project.
+The :code:`RENOVATE_TOKEN` CI variable must be set on the project (or inherited from a group variable).
+
+Renovate image
+--------------
+
+Renovate runs from a custom Docker image hosted at
+:code:`registry.cern.ch/dsb/devops/devtools/renovate`. The image extends the official
+:code:`renovate/renovate` image with the CERN root and intermediate CA certificates pre-installed,
+so it can reach internal services like :code:`acc-py-repo.cern.ch`.
+
+Image versioning uses dated tags (e.g. :code:`2026.04`, :code:`2026.04.1` for patches).
+The mapping from internal tag to upstream Renovate tag is tracked in
+:code:`.gitlab/renovate-versions.yml`:
+
+.. code-block:: yaml
+
+    # Maps internal release tags to upstream Renovate image tags
+    2026.04: "43.110.14-full"
+
+To release a new image version:
+
+1. Add a new entry to :code:`.gitlab/renovate-versions.yml`
+2. Either trigger :code:`build_renovate_image` manually in GitLab CI (set :code:`INTERNAL_TAG` to the new tag),
+   or build locally:
+
+::
+
+    .gitlab/build-renovate-image.sh 2026.04
+
+The script requires :code:`docker` and :code:`yq`, and you must be logged in to
+:code:`registry.cern.ch`.
