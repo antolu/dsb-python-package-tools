@@ -111,9 +111,17 @@ if [ "$EXISTING" != "$RENOVATE_TAG" ]; then
     _py set "$VERSIONS_FILE" "$INTERNAL_TAG" "$RENOVATE_TAG"
     echo ""
     echo "Updated ${VERSIONS_FILE}: ${INTERNAL_TAG} -> ${RENOVATE_TAG}"
-    echo "Review and commit:"
-    echo "  git add .gitlab/renovate-versions.yml"
-    echo "  git commit -m \"chore: record renovate image ${INTERNAL_TAG} -> ${RENOVATE_TAG}\""
+    read -rp "Commit mapping update? [y/N] " CONFIRM
+    if [[ "${CONFIRM,,}" == "y" ]]; then
+        cd "${SCRIPT_DIR}/.."
+        git add .gitlab/renovate-versions.yml
+        git commit -m "chore: record renovate image ${INTERNAL_TAG} -> ${RENOVATE_TAG}"
+        echo "Committed. Don't forget to push."
+    else
+        echo "Skipped commit. To commit manually:"
+        echo "  git add .gitlab/renovate-versions.yml"
+        echo "  git commit -m \"chore: record renovate image ${INTERNAL_TAG} -> ${RENOVATE_TAG}\""
+    fi
 else
     echo "Mapping already up to date."
 fi
