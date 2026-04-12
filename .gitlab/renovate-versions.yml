@@ -1,0 +1,6 @@
+# Maps internal release tags to upstream Renovate image tags.
+# To release a new version:
+#   1. Add a line here: <YYYY.MM[.patch]>: <upstream-renovate-tag>
+#   2. Commit and push
+#   3. Trigger build_renovate_image manually with INTERNAL_TAG=<YYYY.MM[.patch]>
+2026.04: "43.110.14-full"

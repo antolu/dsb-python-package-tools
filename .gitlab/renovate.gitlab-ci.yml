@@ -7,26 +7,20 @@
 #
 # Optional CI variable:
 #   RENOVATE_AUTOMERGE  - Set to "true" to enable automerge (default: false)
-#   RENOVATE_IMAGE_TAG  - Renovate image tag to use (default: 43.110.14-full)
+#   RENOVATE_IMAGE_TAG  - Internal renovate image tag (default: 2026.04)
+#                         See .gitlab/renovate-versions.yml for available tags.
 
 .renovate:
   stage: .post
-  image: renovate/renovate:$RENOVATE_IMAGE_TAG
+  image: registry.cern.ch/dsb/devops/devtools/renovate:$RENOVATE_IMAGE_TAG
   allow_failure: true
   variables:
-    RENOVATE_IMAGE_TAG: "43.110.14-full"
+    RENOVATE_IMAGE_TAG: "2026.04"
     RENOVATE_PLATFORM: gitlab
     RENOVATE_ENDPOINT: "$CI_SERVER_URL/api/v4"
     RENOVATE_REPOSITORIES: "$CI_PROJECT_PATH"
     RENOVATE_AUTODISCOVER: "false"
-    LOG_LEVEL: debug
-    NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
-    SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
-  before_script:
-    - |
-      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" > /usr/local/share/ca-certificates/cern-root.crt
-      curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" > /usr/local/share/ca-certificates/cern-int.crt
-      update-ca-certificates
+    LOG_LEVEL: info
   script:
     - |
       if [ -z "$RENOVATE_TOKEN" ]; then
