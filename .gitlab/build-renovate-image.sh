@@ -4,7 +4,8 @@
 # Example: ./build-renovate-image.sh 2026.05
 #          ./build-renovate-image.sh 2026.05 43.200.0-full
 #
-# Requires: docker, yq, curl, docker login to registry.cern.ch
+# Requires: docker, python3 (with ruamel.yaml), curl
+# docker login to registry.cern.ch must be done beforehand
 
 set -euo pipefail
 
@@ -12,19 +13,61 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSIONS_FILE="${SCRIPT_DIR}/renovate-versions.yml"
 REGISTRY="registry.cern.ch/dsb/devops/devtools/renovate"
 
+_py() {
+    python3 - "$@" <<'EOF'
+import sys
+from ruamel.yaml import YAML
+
+yaml = YAML()
+yaml.preserve_quotes = True
+
+def read(path):
+    with open(path) as f:
+        return yaml.load(f)
+
+def write(path, data):
+    with open(path, "w") as f:
+        yaml.dump(data, f)
+
+def get(path, key):
+    d = read(path)
+    val = d.get(key)
+    print(val if val is not None else "")
+
+def set_(path, key, value):
+    d = read(path)
+    d[key] = value
+    write(path, d)
+
+def list_keys(path):
+    d = read(path)
+    for k, v in d.items():
+        if not str(k).startswith("#"):
+            print(f"{k} -> {v}")
+
+cmd = sys.argv[1]
+if cmd == "get":
+    get(sys.argv[2], sys.argv[3])
+elif cmd == "set":
+    set_(sys.argv[2], sys.argv[3], sys.argv[4])
+elif cmd == "list":
+    list_keys(sys.argv[2])
+EOF
+}
+
 INTERNAL_TAG="${1:-}"
 if [ -z "$INTERNAL_TAG" ]; then
     echo "Usage: $0 <INTERNAL_TAG> [UPSTREAM_TAG]"
     echo ""
     echo "Existing mappings:"
-    yq 'to_entries | .[] | .key + " -> " + .value' "$VERSIONS_FILE"
+    _py list "$VERSIONS_FILE"
     exit 1
 fi
 
 # Check if mapping already exists
-EXISTING=$(yq ".\"${INTERNAL_TAG}\"" "$VERSIONS_FILE")
+EXISTING=$(_py get "$VERSIONS_FILE" "$INTERNAL_TAG")
 
-if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+if [ -n "$EXISTING" ]; then
     SUGGESTED="$EXISTING"
 else
     # Fetch latest -full tag from Docker Hub
@@ -32,7 +75,7 @@ else
     SUGGESTED=$(curl -s "https://hub.docker.com/v2/repositories/renovate/renovate/tags?page_size=50" \
         | grep -o '"name":"[^"]*-full"' \
         | head -1 \
-        | sed 's/"name":"//;s/"//')
+        | sed 's/"name":"//;s/"//g') || true
     if [ -z "$SUGGESTED" ]; then
         SUGGESTED="latest-full"
     fi
@@ -63,15 +106,14 @@ docker build \
 echo "Pushing ${REGISTRY}:${INTERNAL_TAG}"
 docker push "${REGISTRY}:${INTERNAL_TAG}"
 
-# Update versions file
+# Update versions file if needed
 if [ "$EXISTING" != "$RENOVATE_TAG" ]; then
-    yq -i ".\"${INTERNAL_TAG}\" = \"${RENOVATE_TAG}\"" "$VERSIONS_FILE"
+    _py set "$VERSIONS_FILE" "$INTERNAL_TAG" "$RENOVATE_TAG"
+    echo ""
     echo "Updated ${VERSIONS_FILE}: ${INTERNAL_TAG} -> ${RENOVATE_TAG}"
-
-    cd "${SCRIPT_DIR}/.."
-    git add .gitlab/renovate-versions.yml
-    git commit -m "chore: record renovate image ${INTERNAL_TAG} -> ${RENOVATE_TAG}"
-    echo "Committed mapping update. Don't forget to push."
+    echo "Review and commit:"
+    echo "  git add .gitlab/renovate-versions.yml"
+    echo "  git commit -m \"chore: record renovate image ${INTERNAL_TAG} -> ${RENOVATE_TAG}\""
 else
     echo "Mapping already up to date."
 fi
