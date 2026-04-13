@@ -4,9 +4,9 @@ FROM renovate/renovate:${RENOVATE_TAG}
 USER root
 
 RUN curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" \
-      > /usr/local/share/ca-certificates/cern-root.crt \
+      | openssl x509 -inform DER -out /usr/local/share/ca-certificates/cern-root.crt \
  && curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" \
-      > /usr/local/share/ca-certificates/cern-int.crt \
+      | openssl x509 -inform DER -out /usr/local/share/ca-certificates/cern-int.crt \
  && update-ca-certificates
 
 USER 12021
