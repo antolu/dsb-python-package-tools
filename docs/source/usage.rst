@@ -201,3 +201,18 @@ To release a new image version:
 
 The script requires :code:`docker` and :code:`yq`, and you must be logged in to
 :code:`registry.cern.ch`.
+
+To do a dry run locally without opening any MRs:
+
+.. code-block:: bash
+
+    docker run --rm \
+        -e RENOVATE_TOKEN=<your-token> \
+        -e RENOVATE_PLATFORM=gitlab \
+        -e RENOVATE_ENDPOINT=https://gitlab.cern.ch/api/v4 \
+        -e RENOVATE_REPOSITORIES=dsb/devops/devtools \
+        -e RENOVATE_AUTODISCOVER=false \
+        -e LOG_LEVEL=debug \
+        -e RENOVATE_DRY_RUN=full \
+        registry.cern.ch/dsb-devtools/renovate:2026.04 \
+        renovate
