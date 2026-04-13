@@ -4,9 +4,12 @@ FROM renovate/renovate:${RENOVATE_TAG}
 USER root
 
 RUN curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" \
-      | openssl x509 -inform DER -out /usr/local/share/ca-certificates/cern-root.crt \
- && curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" \
-      | openssl x509 -inform DER -out /usr/local/share/ca-certificates/cern-int.crt \
+      -o /tmp/cern-root.der \
+ && openssl x509 -inform DER -in /tmp/cern-root.der \
+      -out /usr/local/share/ca-certificates/cern-root.crt \
+ && rm /tmp/cern-root.der \
+ && curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority(1).crt" \
+      -o /usr/local/share/ca-certificates/cern-int.crt \
  && update-ca-certificates
 
 USER 12021
