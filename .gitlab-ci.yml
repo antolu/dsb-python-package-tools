@@ -79,6 +79,7 @@ release_dist:
 build_renovate_image:
   stage: .pre
   image: docker:latest
+  allow_failure: true
   variables:
     INTERNAL_TAG: "2026.04"
     DOCKER_HOST: tcp://docker:2376
