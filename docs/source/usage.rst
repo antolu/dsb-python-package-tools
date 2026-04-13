@@ -176,7 +176,7 @@ Renovate image
 --------------
 
 Renovate runs from a custom Docker image hosted at
-:code:`registry.cern.ch/dsb/devops/devtools/renovate`. The image extends the official
+:code:`registry.cern.ch/dsb-devtools/renovate`. The image extends the official
 :code:`renovate/renovate` image with the CERN root and intermediate CA certificates pre-installed,
 so it can reach internal services like :code:`acc-py-repo.cern.ch`.
 

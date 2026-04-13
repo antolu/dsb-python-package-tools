@@ -11,7 +11,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSIONS_FILE="${SCRIPT_DIR}/renovate-versions.yml"
-REGISTRY="registry.cern.ch/dsb/devops/devtools/renovate"
+REGISTRY="registry.cern.ch/dsb-devtools/renovate"
 
 _py() {
     python3 - "$@" <<'EOF'
