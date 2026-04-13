@@ -41,7 +41,7 @@ doc = ["acc-py-sphinx", "myst-parser", "sphinx-copybutton"]
 dev = ["pre-commit", "ruff", "mypy"]
 
 [build-system]
-requires = ["setuptools >= 61", "setuptools-scm[toml] ~= 6.0", "wheel"]
+requires = ["setuptools >= 61", "setuptools-scm[toml] ~=10.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 # keep this for dynamic versioning
