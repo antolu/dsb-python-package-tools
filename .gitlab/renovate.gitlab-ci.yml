@@ -7,14 +7,15 @@
 #
 # Optional CI variable:
 #   RENOVATE_AUTOMERGE  - Set to "true" to enable automerge (default: false)
-#   RENOVATE_IMAGE_TAG  - Renovate image tag to use (default: 43.110.14-full)
+#   RENOVATE_IMAGE_TAG  - Internal renovate image tag (default: 2026.04)
+#                         See .gitlab/renovate-versions.yml for available tags.
 
 .renovate:
   stage: .post
-  image: renovate/renovate:$RENOVATE_IMAGE_TAG
+  image: registry.cern.ch/dsb-devtools/renovate:$RENOVATE_IMAGE_TAG
   allow_failure: true
   variables:
-    RENOVATE_IMAGE_TAG: "43.110.14-full"
+    RENOVATE_IMAGE_TAG: "2026.04"
     RENOVATE_PLATFORM: gitlab
     RENOVATE_ENDPOINT: "$CI_SERVER_URL/api/v4"
     RENOVATE_REPOSITORIES: "$CI_PROJECT_PATH"

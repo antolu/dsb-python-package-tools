@@ -72,3 +72,34 @@ pre-commit:
 
 release_dist:
   extends: .acc_py_publish
+
+
+# ========================= Renovate image =========================
+
+build_renovate_image:
+  stage: .pre
+  image: docker:latest
+  variables:
+    INTERNAL_TAG: "2026.04"
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+  services:
+    - docker:dind
+  script:
+    - apk add --no-cache yq
+    - RENOVATE_TAG=$(yq ".[\"${INTERNAL_TAG}\"]" .gitlab/renovate-versions.yml)
+    - |
+      if [ -z "$RENOVATE_TAG" ] || [ "$RENOVATE_TAG" = "null" ]; then
+        echo "ERROR: No upstream tag found for internal tag '${INTERNAL_TAG}' in .gitlab/renovate-versions.yml"
+        exit 1
+      fi
+    - echo "Building registry.cern.ch/dsb-devtools/renovate:${INTERNAL_TAG} from renovate/renovate:${RENOVATE_TAG}"
+    - docker build
+        --build-arg RENOVATE_TAG=${RENOVATE_TAG}
+        -t registry.cern.ch/dsb-devtools/renovate:${INTERNAL_TAG}
+        -f .gitlab/Dockerfile.renovate .
+    - docker push registry.cern.ch/dsb-devtools/renovate:${INTERNAL_TAG}
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+    - when: never

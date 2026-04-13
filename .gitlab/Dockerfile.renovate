@@ -1,0 +1,15 @@
+ARG RENOVATE_TAG
+FROM renovate/renovate:${RENOVATE_TAG}
+
+USER root
+
+RUN curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" \
+      > /usr/local/share/ca-certificates/cern-root.crt \
+ && curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" \
+      > /usr/local/share/ca-certificates/cern-int.crt \
+ && update-ca-certificates
+
+USER 12021
+
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
