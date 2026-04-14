@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import pathlib
 import subprocess
 import urllib.error
 from io import BytesIO
@@ -10,9 +11,13 @@ import pytest
 
 from dsb_devtools.renovate._renovate import (
     _api,
+    _ensure_renovate_ci_include,
+    _ensure_renovate_ci_job_entry,
     _get_project_id,
     _project_path_from_remote,
     _set_ci_variable,
+    _write_renovate_ci_template,
+    ensure_renovate_ci_job,
     make_parser,
 )
 
@@ -140,6 +145,105 @@ def test_set_ci_variable_updates_when_present() -> None:
     calls = mock_api.call_args_list
     assert calls[1][0][1] == "PUT"
     assert calls[1][0][3]["value"] == "newsecret"
+
+
+# --- Renovate CI job setup ---
+
+
+def test_write_renovate_ci_template_creates_file(tmp_path: pathlib.Path) -> None:
+    (tmp_path / ".gitlab").mkdir(parents=True)
+    with patch("dsb_devtools.renovate._renovate._template_dir") as mock_template_dir:
+        mock_template_dir.return_value = tmp_path
+        source = tmp_path / ".gitlab" / "renovate.gitlab-ci.yml"
+        source.write_text("renovate:\n  script:\n    - renovate\n")
+
+        dest = tmp_path / "repo"
+        dest.mkdir()
+        _write_renovate_ci_template(dest)
+
+    target = dest / ".gitlab" / "renovate.gitlab-ci.yml"
+    assert target.exists()
+    assert target.read_text() == source.read_text()
+
+
+def test_ensure_renovate_ci_include_adds_include(tmp_path: pathlib.Path) -> None:
+    ci_path = tmp_path / ".gitlab-ci.yml"
+    ci_path.write_text(
+        """
+include:
+  - project: acc-co/devops/python/acc-py-gitlab-ci-templates
+    file: v2/python.gitlab-ci.yml
+""".strip()
+        + "\n"
+    )
+
+    _ensure_renovate_ci_include(tmp_path)
+
+    content = ci_path.read_text()
+    assert "local: .gitlab/renovate.gitlab-ci.yml" in content
+
+
+def test_ensure_renovate_ci_include_no_duplicate(tmp_path: pathlib.Path) -> None:
+    ci_path = tmp_path / ".gitlab-ci.yml"
+    ci_path.write_text(
+        """
+include:
+  - local: .gitlab/renovate.gitlab-ci.yml
+""".strip()
+        + "\n"
+    )
+
+    _ensure_renovate_ci_include(tmp_path)
+
+    content = ci_path.read_text()
+    assert content.count(".gitlab/renovate.gitlab-ci.yml") == 1
+
+
+def test_ensure_renovate_ci_job_entry_adds_job(tmp_path: pathlib.Path) -> None:
+    ci_path = tmp_path / ".gitlab-ci.yml"
+    ci_path.write_text("variables:\n  project_name: demo\n")
+
+    _ensure_renovate_ci_job_entry(tmp_path)
+
+    content = ci_path.read_text()
+    assert "\nrenovate:" in content
+    assert "extends: .renovate" in content
+
+
+def test_ensure_renovate_ci_job_entry_no_duplicate(tmp_path: pathlib.Path) -> None:
+    ci_path = tmp_path / ".gitlab-ci.yml"
+    ci_path.write_text("variables:\n  foo: bar\n\nrenovate:\n  extends: .renovate\n")
+
+    _ensure_renovate_ci_job_entry(tmp_path)
+
+    assert ci_path.read_text().count("renovate:") == 1
+
+
+def test_ensure_renovate_ci_job_entry_missing_ci(tmp_path: pathlib.Path) -> None:
+    _ensure_renovate_ci_job_entry(tmp_path)  # should not raise
+
+
+def test_ensure_renovate_ci_job_writes_template_and_include(
+    tmp_path: pathlib.Path,
+) -> None:
+    ci_path = tmp_path / ".gitlab-ci.yml"
+    ci_path.write_text("variables:\n  project_name: demo\n")
+
+    template_root = tmp_path / "templates"
+    (template_root / ".gitlab").mkdir(parents=True)
+    (template_root / ".gitlab" / "renovate.gitlab-ci.yml").write_text(
+        "renovate:\n  script:\n    - renovate\n"
+    )
+
+    with patch("dsb_devtools.renovate._renovate._template_dir") as mock_template_dir:
+        mock_template_dir.return_value = template_root
+        ensure_renovate_ci_job(tmp_path)
+
+    content = ci_path.read_text()
+    assert (tmp_path / ".gitlab" / "renovate.gitlab-ci.yml").exists()
+    assert "local: .gitlab/renovate.gitlab-ci.yml" in content
+    assert "renovate:" in content
+    assert "extends: .renovate" in content
 
 
 # --- CLI parser ---

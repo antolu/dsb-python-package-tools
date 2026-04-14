@@ -13,6 +13,7 @@ import urllib.parse
 import urllib.request
 
 import rich
+import ruamel.yaml
 import survey
 
 
@@ -40,6 +41,7 @@ _SCHEDULE_CRONS = {
     "monthly": "0 6 1 * *",
     "manual only": None,
 }
+_RENOVATE_CI_INCLUDE = ".gitlab/renovate.gitlab-ci.yml"
 
 
 def _print_ok(msg: str) -> None:
@@ -218,6 +220,111 @@ def _detect_has_precommit(cwd: pathlib.Path | None = None) -> bool:
     return p.exists()
 
 
+def _template_dir() -> pathlib.Path:
+    return pathlib.Path(__file__).resolve().parents[1] / "templates"
+
+
+def _write_renovate_ci_template(dest: pathlib.Path | None = None) -> None:
+    root = dest or _git_root()
+    source = _template_dir() / ".gitlab" / "renovate.gitlab-ci.yml"
+    target = root / _RENOVATE_CI_INCLUDE
+
+    if target.exists():
+        _print_info(f"Found existing {target}")
+        return
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(source.read_text())
+    _print_ok(f"Written {target}")
+
+
+def _ensure_renovate_ci_include(dest: pathlib.Path | None = None) -> None:
+    root = dest or _git_root()
+    ci_path = root / ".gitlab-ci.yml"
+    if not ci_path.exists():
+        _print_info(f"Skipped CI include update: {ci_path} not found")
+        return
+
+    yaml = ruamel.yaml.YAML(typ="rt")
+    ci_conf = yaml.load(ci_path.read_text())
+    if not isinstance(ci_conf, dict):
+        _print_err(f"Could not update include in {ci_path}")
+        return
+
+    includes = ci_conf.get("include")
+    include_entry = {"local": _RENOVATE_CI_INCLUDE}
+
+    def _has_renovate_include(items: list) -> bool:
+        for item in items:
+            if isinstance(item, str) and item == _RENOVATE_CI_INCLUDE:
+                return True
+            if isinstance(item, dict) and item.get("local") == _RENOVATE_CI_INCLUDE:
+                return True
+        return False
+
+    if includes is None:
+        ci_conf["include"] = [include_entry]
+    elif isinstance(includes, list):
+        if _has_renovate_include(includes):
+            _print_info(f"Found existing include in {ci_path}")
+            return
+        includes.append(include_entry)
+    elif isinstance(includes, dict):
+        if includes.get("local") == _RENOVATE_CI_INCLUDE:
+            _print_info(f"Found existing include in {ci_path}")
+            return
+        ci_conf["include"] = [includes, include_entry]
+    elif isinstance(includes, str):
+        if includes == _RENOVATE_CI_INCLUDE:
+            _print_info(f"Found existing include in {ci_path}")
+            return
+        ci_conf["include"] = [includes, include_entry]
+    else:
+        _print_err(f"Could not update include in {ci_path}")
+        return
+
+    with open(ci_path, "w") as f:
+        yaml.dump(ci_conf, f)
+    _print_ok(f"Updated {ci_path} with Renovate CI include")
+
+
+def _ensure_renovate_ci_job_entry(dest: pathlib.Path | None = None) -> None:
+    root = dest or _git_root()
+    ci_path = root / ".gitlab-ci.yml"
+    if not ci_path.exists():
+        _print_info(f"Skipped renovate job entry: {ci_path} not found")
+        return
+
+    yaml = ruamel.yaml.YAML(typ="rt")
+    ci_conf = yaml.load(ci_path.read_text())
+    if not isinstance(ci_conf, dict):
+        _print_err(f"Could not update jobs in {ci_path}")
+        return
+
+    if "renovate" in ci_conf:
+        _print_info(f"Found existing renovate job in {ci_path}")
+        return
+
+    job: dict = {
+        "extends": ".renovate",
+        "rules": [
+            {"if": '$CI_PIPELINE_SOURCE == "schedule"'},
+            {"if": '$CI_PIPELINE_SOURCE == "web"', "when": "manual"},
+            {"when": "never"},
+        ],
+    }
+    ci_conf["renovate"] = job
+    with open(ci_path, "w") as f:
+        yaml.dump(ci_conf, f)
+    _print_ok(f"Added renovate job to {ci_path}")
+
+
+def ensure_renovate_ci_job(dest: pathlib.Path | None = None) -> None:
+    _write_renovate_ci_template(dest=dest)
+    _ensure_renovate_ci_include(dest=dest)
+    _ensure_renovate_ci_job_entry(dest=dest)
+
+
 def write_renovate_json(
     config: RenovateConfig,
     dest: pathlib.Path | None = None,
@@ -342,6 +449,7 @@ def setup(
 ) -> None:
     renovate_config = _prompt_renovate_config(default=renovate_config, cwd=dest)
     write_renovate_json(renovate_config, dest=dest)
+    ensure_renovate_ci_job(dest=dest)
 
     token = _resolve_token(token)
     project_path = _resolve_project_path(project_path)
