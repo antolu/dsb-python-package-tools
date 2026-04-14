@@ -481,8 +481,16 @@ def _resolve_token(token: str | None) -> str:
         _print_info("Using token from environment (RENOVATE_TOKEN / GITLAB_TOKEN)")
         return env_token
 
+    def _require_token(result: str) -> None:
+        if not result:
+            msg = (
+                "token is required — set RENOVATE_TOKEN / GITLAB_TOKEN or pass --token"
+            )
+            raise survey.widgets.Abort(msg)
+
     return survey.routines.input(
         "GitLab access token (scopes: api, read_repository, write_repository): ",
+        validate=_require_token,
     )
 
 
