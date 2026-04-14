@@ -494,6 +494,11 @@ def setup(
     *,
     set_token_var: bool = True,
 ) -> None:
+    if renovate_config is None:
+        existing = _load_renovate_json(cwd=dest)
+        if existing:
+            _print_info("Loaded existing renovate.json as defaults")
+        renovate_config = existing
     renovate_config = _prompt_renovate_config(default=renovate_config, cwd=dest)
     write_renovate_json(renovate_config, dest=dest)
     ensure_renovate_ci_job(dest=dest)
