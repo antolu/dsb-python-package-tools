@@ -168,16 +168,16 @@ def _set_ci_variable(
 
 
 def _git_root() -> pathlib.Path:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return pathlib.Path(result.stdout.strip())
-    except subprocess.CalledProcessError:
-        return pathlib.Path(".")
+    result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        _print_err("Not inside a git repository")
+        sys.exit(1)
+    return pathlib.Path(result.stdout.strip())
 
 
 def _load_renovate_json(cwd: pathlib.Path | None = None) -> RenovateConfig | None:
@@ -374,6 +374,63 @@ def write_renovate_json(
     _print_ok(f"Written {out}")
 
 
+def _print_renovate_summary(cfg: RenovateConfig) -> None:
+    rich.print("\n[bold]Renovate configuration:[/bold]")
+    rich.print(
+        f"  pyproject.toml deps : {'[green]yes[/green]' if cfg.pyproject else '[red]no[/red]'}"
+        + (f"  (prefix: {cfg.pyproject_prefix})" if cfg.pyproject else "")
+    )
+    rich.print(
+        f"  pre-commit hooks    : {'[green]yes[/green]' if cfg.precommit else '[red]no[/red]'}"
+        + (f"  (prefix: {cfg.precommit_prefix})" if cfg.precommit else "")
+    )
+    rich.print(
+        f"  git submodules      : {'[green]yes[/green]' if cfg.submodules else '[red]no[/red]'}"
+        + (f"  (prefix: {cfg.submodules_prefix})" if cfg.submodules else "")
+    )
+    rich.print("")
+
+
+def _edit_renovate_config(cfg: RenovateConfig) -> None:
+    def make_options() -> list[str]:
+        return [
+            "Done",
+            f"pyproject.toml deps: {'yes' if cfg.pyproject else 'no'} (prefix: {cfg.pyproject_prefix})",
+            f"pre-commit hooks: {'yes' if cfg.precommit else 'no'} (prefix: {cfg.precommit_prefix})",
+            f"git submodules: {'yes' if cfg.submodules else 'no'} (prefix: {cfg.submodules_prefix})",
+        ]
+
+    while index := survey.routines.select(
+        "What would you like to change? ", options=make_options()
+    ):
+        if index == 0:
+            break
+        if index == 1:
+            cfg.pyproject = survey.routines.inquire(
+                "Manage pyproject.toml deps? ", default=cfg.pyproject
+            )
+            if cfg.pyproject:
+                cfg.pyproject_prefix = survey.routines.input(
+                    "Commit prefix? ", value=cfg.pyproject_prefix
+                )
+        elif index == 2:
+            cfg.precommit = survey.routines.inquire(
+                "Manage pre-commit hooks? ", default=cfg.precommit
+            )
+            if cfg.precommit:
+                cfg.precommit_prefix = survey.routines.input(
+                    "Commit prefix? ", value=cfg.precommit_prefix
+                )
+        elif index == 3:
+            cfg.submodules = survey.routines.inquire(
+                "Manage git submodules? ", default=cfg.submodules
+            )
+            if cfg.submodules:
+                cfg.submodules_prefix = survey.routines.input(
+                    "Commit prefix? ", value=cfg.submodules_prefix
+                )
+
+
 def _prompt_renovate_config(
     default: RenovateConfig | None = None,
     cwd: pathlib.Path | None = None,
@@ -383,31 +440,21 @@ def _prompt_renovate_config(
     has_precommit = _detect_has_precommit(cwd)
 
     cfg.pyproject = survey.routines.inquire(
-        "Renovate: manage pyproject.toml dependencies? ", default=cfg.pyproject
+        "Renovate: manage pyproject.toml dependencies? ", default=True
     )
-    if cfg.pyproject:
-        cfg.pyproject_prefix = survey.routines.input(
-            "Renovate: commit prefix for pyproject updates? ",
-            value=cfg.pyproject_prefix,
-        )
     if has_precommit:
         cfg.precommit = survey.routines.inquire(
-            "Renovate: manage pre-commit hook revisions? ", default=cfg.precommit
+            "Renovate: manage pre-commit hook revisions? ", default=True
         )
-        if cfg.precommit:
-            cfg.precommit_prefix = survey.routines.input(
-                "Renovate: commit prefix for pre-commit updates? ",
-                value=cfg.precommit_prefix,
-            )
     if has_submodules:
         cfg.submodules = survey.routines.inquire(
-            "Renovate: manage git submodule tags? ", default=cfg.submodules
+            "Renovate: manage git submodules? ", default=True
         )
-        if cfg.submodules:
-            cfg.submodules_prefix = survey.routines.input(
-                "Renovate: commit prefix for submodule updates? ",
-                value=cfg.submodules_prefix,
-            )
+
+    _print_renovate_summary(cfg)
+
+    if not survey.routines.inquire("Is this configuration correct? ", default=True):
+        _edit_renovate_config(cfg)
 
     return cfg
 
