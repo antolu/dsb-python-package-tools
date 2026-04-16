@@ -60,7 +60,7 @@ exclude = ["dsb_devtools.templates*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-dsb_devtools = ["py.typed"]
+dsb_devtools = ["py.typed", "maintenance/manifest.json"]
 
 [tool.setuptools]
 include-package-data = true
