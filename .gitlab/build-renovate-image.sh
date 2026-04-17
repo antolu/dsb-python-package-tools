@@ -97,10 +97,11 @@ if [[ "$RENOVATE_TAG" != *-full ]]; then
 fi
 
 echo "Building ${REGISTRY}:${INTERNAL_TAG} from renovate/renovate:${RENOVATE_TAG}"
-docker build \
+docker buildx build \
     --build-arg RENOVATE_TAG="${RENOVATE_TAG}" \
     -t "${REGISTRY}:${INTERNAL_TAG}" \
     -f "${SCRIPT_DIR}/Dockerfile.renovate" \
+    --load \
     "${SCRIPT_DIR}/.."
 
 echo "Pushing ${REGISTRY}:${INTERNAL_TAG}"
