@@ -71,9 +71,9 @@ if [ -n "$EXISTING" ]; then
     SUGGESTED="$EXISTING"
 else
     # Fetch latest -full tag from Docker Hub
-    echo "Fetching latest renovate/renovate -full tags from Docker Hub..."
+    echo "Fetching latest renovate/renovate -slim tags from Docker Hub..."
     SUGGESTED=$(curl -s "https://hub.docker.com/v2/repositories/renovate/renovate/tags?page_size=50" \
-        | grep -o '"name":"[^"]*-slim"' \
+        | grep -o '"name":"[0-9][^"]*-slim"' \
         | head -1 \
         | sed 's/"name":"//;s/"//g') || true
     if [ -z "$SUGGESTED" ]; then
