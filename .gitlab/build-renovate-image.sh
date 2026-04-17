@@ -2,7 +2,7 @@
 # Build and push the internal Renovate image to registry.cern.ch.
 # Usage: ./build-renovate-image.sh <INTERNAL_TAG> [UPSTREAM_TAG]
 # Example: ./build-renovate-image.sh 2026.05
-#          ./build-renovate-image.sh 2026.05 43.200.0-full
+#          ./build-renovate-image.sh 2026.05 43.200.0-slim
 #
 # Requires: docker, python3 (with ruamel.yaml), curl
 # docker login to registry.cern.ch must be done beforehand
@@ -73,11 +73,11 @@ else
     # Fetch latest -full tag from Docker Hub
     echo "Fetching latest renovate/renovate -full tags from Docker Hub..."
     SUGGESTED=$(curl -s "https://hub.docker.com/v2/repositories/renovate/renovate/tags?page_size=50" \
-        | grep -o '"name":"[^"]*-full"' \
+        | grep -o '"name":"[^"]*-slim"' \
         | head -1 \
         | sed 's/"name":"//;s/"//g') || true
     if [ -z "$SUGGESTED" ]; then
-        SUGGESTED="latest-full"
+        SUGGESTED="latest-slim"
     fi
 fi
 
@@ -91,8 +91,8 @@ else
 fi
 
 # Validate -full suffix
-if [[ "$RENOVATE_TAG" != *-full ]]; then
-    echo "ERROR: upstream tag must end in -full (got '${RENOVATE_TAG}')"
+if [[ "$RENOVATE_TAG" != *-slim ]]; then
+    echo "ERROR: upstream tag must end in -slim (got '${RENOVATE_TAG}')"
     exit 1
 fi
 

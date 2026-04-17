@@ -201,7 +201,7 @@ upstream Renovate tag is tracked in :code:`.gitlab/renovate-versions.yml`:
 .. code-block:: yaml
 
     # Maps internal release tags to upstream Renovate image tags
-    2026.04: "43.110.14-full"
+    2026.04: "43.111-slim"
 
 To release a new image version:
 

@@ -3,4 +3,4 @@
 #   1. Add a line here: <YYYY.MM[.patch]>: <upstream-renovate-tag>
 #   2. Commit and push
 #   3. Trigger build_renovate_image manually with INTERNAL_TAG=<YYYY.MM[.patch]>
-2026.04: 43.111-full
+2026.04: 43.111-slim
