@@ -100,66 +100,82 @@ dsb-pkginit is also deployed on the TN Acc-Py distribution, runnable as
 
     acc-py app run dsb-devtools pkginit
 
-================
-Renovate setup
-================
+====================
+acc-py-maintenance
+====================
 
-The :code:`dsb-renovate` entrypoint sets up `Renovate <https://docs.renovatebot.com/>`_ for automated
-dependency update MRs on a GitLab project. Renovate runs as a self-hosted CI job — no external
-service is used.
+The :code:`acc-py-maintenance` CI job keeps Acc-Py packages up to date. It runs Renovate to
+open dependency-update MRs, then runs a series of maintenance steps that act on the Renovate
+output. Both run in the same CI job on a schedule.
 
-The following are managed automatically:
+What it does
+------------
 
-- Python dependencies in :code:`pyproject.toml` (pep621 manager)
-- Pre-commit hook revisions and :code:`additional_dependencies` in :code:`.pre-commit-config.yaml`
-- Git submodule tags (semver versioning)
+On every scheduled run:
 
-Renovate never auto-merges. All updates are opened as MRs for human review.
+- **Dependency updates** — Renovate opens or updates MRs for outdated Python dependencies
+  (:code:`pyproject.toml`), pre-commit hook revisions, and git submodule tags. Updates are
+  never auto-merged unless :code:`RENOVATE_AUTOMERGE=true` is set.
+
+- **Base distribution deprecation check** — if the project's :code:`ACC_PY_BASE_IMAGE_TAG` in
+  :code:`.gitlab-ci.yml` refers to a deprecated or soon-to-expire Acc-Py base image, a warning
+  is posted to the Dependency Dashboard issue.
+
+- **setup.py migration** — if the project still has a :code:`setup.py`, it is automatically
+  migrated to :code:`pyproject.toml` and committed to the Renovate-managed branch.
 
 Prerequisites
 -------------
 
-- A GitLab access token with :code:`api` scope (PAT, project token, or group token)
-- The token owner must have **Maintainer** role on the project (required to create CI variables and pipeline schedules)
+- A GitLab access token with :code:`api`, :code:`read_repository`, and :code:`write_repository`
+  scopes (PAT, project token, or group token)
+- The token owner must have **Maintainer** role on the project
 
-Commands
---------
+Setup
+-----
 
-Set up Renovate for a project (writes :code:`renovate.json`, creates CI schedule, sets :code:`RENOVATE_TOKEN`):
+Run the setup command from inside the project's git checkout:
 
 ::
 
     dsb-renovate setup
 
-Update an existing Renovate schedule:
+This writes :code:`renovate.json`, creates a CI pipeline schedule, and sets the
+:code:`RENOVATE_TOKEN` CI variable on the project. The command auto-detects the GitLab project
+from the current git remote. The token is read from :code:`--token`, or falls back to the
+:code:`RENOVATE_TOKEN` / :code:`GITLAB_TOKEN` environment variables, or prompts interactively.
+
+Other commands:
 
 ::
 
-    dsb-renovate update
-
-Remove the Renovate schedule and optionally the CI variable:
-
-::
-
-    dsb-renovate teardown
-
-All commands auto-detect the project from the current git remote. The token is read from
-:code:`--token`, or falls back to the :code:`RENOVATE_TOKEN` / :code:`GITLAB_TOKEN` environment variables,
-or prompts interactively.
+    dsb-renovate update     # update the existing schedule
+    dsb-renovate teardown   # remove the schedule and optionally the CI variable
 
 Integration with dsb-pkginit
 -----------------------------
 
-When running :code:`dsb-pkginit` with CI enabled and a real GitLab URL, the tool will offer to run
-:code:`dsb-renovate setup` at the end of package initialization. The Renovate manager options
-(pyproject, pre-commit, submodules) appear in the configuration summary table and can be
-adjusted before confirming.
+When running :code:`dsb-pkginit` with CI enabled and a real GitLab URL, the tool will offer to
+run :code:`dsb-renovate setup` at the end of package initialization.
+
+CI variables
+------------
+
+Required:
+
+- :code:`RENOVATE_TOKEN` — GitLab access token (scopes: :code:`api`, :code:`read_repository`, :code:`write_repository`)
+
+Optional:
+
+- :code:`RENOVATE_AUTOMERGE` — set to :code:`"true"` to enable automerge for Renovate MRs (default: disabled)
+- :code:`RENOVATE_IMAGE_TAG` — internal Renovate image tag to use (default: :code:`2026.04`)
+- :code:`MAINTENANCE_MANIFEST_URL` — URL or path to a custom deprecation manifest JSON (default: bundled)
 
 Reusing the CI template
 ------------------------
 
-The Renovate CI job is defined in :code:`.gitlab/renovate.gitlab-ci.yml`. To reuse it in another
-project, include the file and extend the hidden job:
+The job template is defined in :code:`.gitlab/renovate.gitlab-ci.yml`. To include it in another
+project:
 
 .. code-block:: yaml
 
@@ -167,22 +183,20 @@ project, include the file and extend the hidden job:
       - project: dsb/devops/devtools
         file: .gitlab/renovate.gitlab-ci.yml
 
-    my_renovate:
-      extends: .renovate
+    my_maintenance:
+      extends: .acc-py-maintenance
 
 The :code:`RENOVATE_TOKEN` CI variable must be set on the project (or inherited from a group variable).
 
 Renovate image
 --------------
 
-Renovate runs from a custom Docker image hosted at
-:code:`registry.cern.ch/dsb-devtools/renovate`. The image extends the official
-:code:`renovate/renovate` image with the CERN root and intermediate CA certificates pre-installed,
-so it can reach internal services like :code:`acc-py-repo.cern.ch`.
+The job runs from a custom Docker image at :code:`registry.cern.ch/dsb-devtools/renovate`.
+It extends the official :code:`renovate/renovate` image with CERN CA certificates and
+:code:`dsb-devtools` pre-installed (which includes :code:`setup-py-migrator` as a dependency).
 
-Image versioning uses dated tags (e.g. :code:`2026.04`, :code:`2026.04.1` for patches).
-The mapping from internal tag to upstream Renovate tag is tracked in
-:code:`.gitlab/renovate-versions.yml`:
+Image versioning uses dated tags (e.g. :code:`2026.04`). The mapping from internal tag to
+upstream Renovate tag is tracked in :code:`.gitlab/renovate-versions.yml`:
 
 .. code-block:: yaml
 
@@ -192,17 +206,19 @@ The mapping from internal tag to upstream Renovate tag is tracked in
 To release a new image version:
 
 1. Add a new entry to :code:`.gitlab/renovate-versions.yml`
-2. Either trigger :code:`build_renovate_image` manually in GitLab CI (set :code:`INTERNAL_TAG` to the new tag),
+2. Trigger :code:`build_renovate_image` manually in GitLab CI (set :code:`INTERNAL_TAG` to the new tag),
    or build locally:
 
 ::
 
     .gitlab/build-renovate-image.sh 2026.04
 
-The script requires :code:`docker` and :code:`yq`, and you must be logged in to
-:code:`registry.cern.ch`.
+The script requires :code:`docker` and :code:`yq`, and you must be logged in to :code:`registry.cern.ch`.
 
-To do a dry run locally without opening any MRs:
+Local dry run
+-------------
+
+To run Renovate only (no maintenance steps), without opening any MRs:
 
 .. code-block:: bash
 
@@ -210,9 +226,37 @@ To do a dry run locally without opening any MRs:
         -e RENOVATE_TOKEN=<your-token> \
         -e RENOVATE_PLATFORM=gitlab \
         -e RENOVATE_ENDPOINT=https://gitlab.cern.ch/api/v4 \
-        -e RENOVATE_REPOSITORIES=dsb/devops/devtools \
+        -e RENOVATE_REPOSITORIES=<org>/<repo> \
         -e RENOVATE_AUTODISCOVER=false \
         -e LOG_LEVEL=debug \
         -e RENOVATE_DRY_RUN=full \
         registry.cern.ch/dsb-devtools/renovate:2026.04 \
         renovate
+
+To run the full pipeline — Renovate followed by all maintenance steps — in dry-run mode:
+
+.. code-block:: bash
+
+    docker run --rm \
+        -e RENOVATE_TOKEN=<your-token> \
+        -e RENOVATE_PLATFORM=gitlab \
+        -e RENOVATE_ENDPOINT=https://gitlab.cern.ch/api/v4 \
+        -e RENOVATE_REPOSITORIES=<org>/<repo> \
+        -e RENOVATE_AUTODISCOVER=false \
+        -e LOG_FORMAT=json -e LOG_LEVEL=debug \
+        -e RENOVATE_DRY_RUN=full \
+        registry.cern.ch/dsb-devtools/renovate:2026.04 \
+        sh -c 'renovate 2>&1 | tee /tmp/renovate.log || true && dsb-devtools maintenance run --log /tmp/renovate.log --dry-run'
+
+The :code:`--dry-run` flag makes maintenance steps print what they would do without making any
+API calls or git pushes. To run maintenance steps against an existing log file without Docker:
+
+::
+
+    dsb-devtools maintenance run --log renovate.log --dry-run
+
+To inspect the parsed Renovate log as JSON:
+
+::
+
+    dsb-devtools maintenance parse-log --log renovate.log
