@@ -1,0 +1,3 @@
+variables:
+  ACC_PY_BASE_IMAGE_TAG: "2026.01"
+  PY_VERSION: "3.14"
