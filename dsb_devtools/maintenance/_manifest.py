@@ -4,6 +4,7 @@ import datetime
 import json
 import pathlib
 import sys
+import urllib.error
 import urllib.request
 
 from ._types import BaseDist, Manifest
@@ -44,7 +45,7 @@ def load_manifest(
         else:
             data = _load_from_path(pathlib.Path(source))
         return _parse_manifest_data(data)
-    except Exception as e:
+    except (OSError, json.JSONDecodeError, urllib.error.URLError, ValueError) as e:
         print(
             f"WARNING: Could not load manifest from {source!r}: {e}. "
             "Falling back to bundled manifest.",
