@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+import pathlib
 
 
 @dataclasses.dataclass
@@ -60,6 +61,7 @@ class StepContext:
     dry_run: bool
     repository: str
     gitlab_base: str
+    repo_path: pathlib.Path | None = None
 
 
 class LogParseError(Exception):
