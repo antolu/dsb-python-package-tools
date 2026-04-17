@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 
+from .maintenance.__main__ import make_parser as maintenance_make_parser
 from .pkginit import main as pkginit_main
 from .pkginit import make_parser as pkginit_make_parser
 from .renovate import make_parser as renovate_make_parser
@@ -23,6 +24,10 @@ def _run_renovate(args: argparse.Namespace) -> None:
         renovate_update(project_path=args.project_path, token=args.token)
 
 
+def _run_maintenance(args: argparse.Namespace) -> None:
+    args.func(args)
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description="DSB Devtools", usage="dsb-devtools <command> [options]"
@@ -40,6 +45,12 @@ def main(argv: list[str] | None = None) -> None:
     )
     renovate_make_parser(renovate_parser)
     renovate_parser.set_defaults(func=_run_renovate)
+
+    maintenance_parser = subparsers.add_parser(
+        "maintenance", help="Run acc-py maintenance steps"
+    )
+    maintenance_make_parser(maintenance_parser)
+    maintenance_parser.set_defaults(func=_run_maintenance)
 
     args = parser.parse_args(argv)
 
