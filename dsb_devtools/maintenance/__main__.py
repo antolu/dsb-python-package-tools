@@ -15,6 +15,14 @@ from ._runner import run_steps
 from ._steps import STEPS
 from ._types import LogParseError, StepContext
 
+
+def _resolve_repo_path(repository: str) -> pathlib.Path | None:
+    base_dir = pathlib.Path(os.environ.get("RENOVATE_BASE_DIR", "/tmp/renovate"))
+    platform = os.environ.get("RENOVATE_PLATFORM", "gitlab")
+    candidate = base_dir / "repos" / platform / pathlib.Path(repository)
+    return candidate if candidate.is_dir() else None
+
+
 _BUNDLED_MANIFEST = pathlib.Path(__file__).parent / "manifest.json"
 _DEFAULT_MANIFEST_URL = os.environ.get(
     "MAINTENANCE_MANIFEST_URL", str(_BUNDLED_MANIFEST)
@@ -62,6 +70,7 @@ def _cmd_run(args: argparse.Namespace) -> None:
         dry_run=args.dry_run,
         repository=repository,
         gitlab_base=gitlab_base,
+        repo_path=_resolve_repo_path(repository),
     )
 
     run_steps(ctx, STEPS)
