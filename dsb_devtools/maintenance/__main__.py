@@ -17,6 +17,8 @@ from ._types import LogParseError, StepContext
 
 
 def _resolve_repo_path(repository: str) -> pathlib.Path | None:
+    if not repository:
+        return None
     base_dir = pathlib.Path(os.environ.get("RENOVATE_BASE_DIR", "/tmp/renovate"))
     platform = os.environ.get("RENOVATE_PLATFORM", "gitlab")
     candidate = base_dir / "repos" / platform / pathlib.Path(repository)

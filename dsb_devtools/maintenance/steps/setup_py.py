@@ -62,7 +62,7 @@ class SetupPyStep(MaintenanceStep):
             return
 
         subprocess.run(
-            ["git", "-C", str(ctx.repo_path), "add", "-u"],
+            ["git", "-C", str(ctx.repo_path), "add", "setup.py", "pyproject.toml"],
             check=True,
         )
         subprocess.run(
