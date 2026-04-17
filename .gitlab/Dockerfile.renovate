@@ -16,8 +16,7 @@ RUN pip install \
       --index-url https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/ \
       --extra-index-url https://pypi.org/simple/ \
       --trusted-host acc-py-repo.cern.ch \
-      dsb-devtools \
-      setup-py-migrator
+      dsb-devtools
 
 USER 12021
 

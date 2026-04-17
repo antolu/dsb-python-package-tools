@@ -23,6 +23,7 @@ dependencies = [
     "ruamel.yaml >= 0.18, < 1.0",
     "rich > 13.0",
     "pre-commit >= 3.6",
+    "setup-py-migrator",
 ]
 
 [[project.authors]]
