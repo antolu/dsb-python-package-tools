@@ -2,7 +2,7 @@
 # Build and push the internal Renovate image to registry.cern.ch.
 # Usage: ./build-renovate-image.sh <INTERNAL_TAG> [UPSTREAM_TAG]
 # Example: ./build-renovate-image.sh 2026.05
-#          ./build-renovate-image.sh 2026.05 43.200.0
+#          ./build-renovate-image.sh 2026.05 43.200.0-full
 #
 # Requires: docker, python3 (with ruamel.yaml), curl
 # docker login to registry.cern.ch must be done beforehand
@@ -70,17 +70,17 @@ EXISTING=$(_py get "$VERSIONS_FILE" "$INTERNAL_TAG")
 if [ -n "$EXISTING" ]; then
     SUGGESTED="$EXISTING"
 else
-    # Fetch latest slim (no suffix) versioned tag from Docker Hub
-    echo "Fetching latest renovate/renovate slim tags from Docker Hub..."
+    # Fetch latest -full tag from Docker Hub
+    echo "Fetching latest renovate/renovate -full tags from Docker Hub..."
     SUGGESTED=$(curl -s "https://hub.docker.com/v2/repositories/renovate/renovate/tags?page_size=50" \
         | python3 -c "
 import json, sys, re
 tags = [t['name'] for t in json.load(sys.stdin)['results']]
-slim = [t for t in tags if re.fullmatch(r'[0-9]+\.[0-9]+(\.[0-9]+)?', t)]
-print(slim[0] if slim else '')
+full = [t for t in tags if re.fullmatch(r'[0-9]+\.[0-9]+(\.[0-9]+)?-full', t)]
+print(full[0] if full else '')
 ") || true
     if [ -z "$SUGGESTED" ]; then
-        SUGGESTED=""
+        SUGGESTED="latest-full"
     fi
 fi
 
@@ -88,14 +88,14 @@ fi
 if [ -n "${2:-}" ]; then
     RENOVATE_TAG="$2"
 else
-    echo "Suggested upstream tag: ${SUGGESTED:-none found}"
-    read -rp "Upstream Renovate tag (e.g. 43.129, enter to accept): " INPUT
+    echo "Suggested upstream tag: ${SUGGESTED}"
+    read -rp "Upstream Renovate tag [-full required, enter to accept]: " INPUT
     RENOVATE_TAG="${INPUT:-$SUGGESTED}"
 fi
 
-# Validate: must be a versioned slim tag (digits and dots only, no suffix)
-if [[ ! "$RENOVATE_TAG" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
-    echo "ERROR: upstream tag must be a versioned slim tag like '43.129' or '43.129.0' (got '${RENOVATE_TAG}')"
+# Validate -full suffix
+if [[ "$RENOVATE_TAG" != *-full ]]; then
+    echo "ERROR: upstream tag must end in -full (got '${RENOVATE_TAG}')"
     exit 1
 fi
 
