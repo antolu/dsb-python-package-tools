@@ -301,22 +301,22 @@ def _ensure_renovate_ci_job_entry(dest: pathlib.Path | None = None) -> None:
         _print_err(f"Could not update jobs in {ci_path}")
         return
 
-    if "renovate" in ci_conf:
-        _print_info(f"Found existing renovate job in {ci_path}")
+    if "acc-py-maintenance" in ci_conf:
+        _print_info(f"Found existing acc-py-maintenance job in {ci_path}")
         return
 
     job: dict = {
-        "extends": ".renovate",
+        "extends": ".acc-py-maintenance",
         "rules": [
             {"if": '$CI_PIPELINE_SOURCE == "schedule"'},
             {"if": '$CI_PIPELINE_SOURCE == "web"', "when": "manual"},
             {"when": "never"},
         ],
     }
-    ci_conf["renovate"] = job
+    ci_conf["acc-py-maintenance"] = job
     with open(ci_path, "w") as f:
         yaml.dump(ci_conf, f)
-    _print_ok(f"Added renovate job to {ci_path}")
+    _print_ok(f"Added acc-py-maintenance job to {ci_path}")
 
 
 def ensure_renovate_ci_job(dest: pathlib.Path | None = None) -> None:

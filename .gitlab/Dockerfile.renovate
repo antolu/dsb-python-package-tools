@@ -12,6 +12,11 @@ RUN curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certifi
       -o /usr/local/share/ca-certificates/cern-int.crt \
  && update-ca-certificates
 
+RUN pip install \
+      --index-url https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/ \
+      --extra-index-url https://pypi.org/simple/ \
+      dsb-devtools
+
 USER 12021
 
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt

@@ -1,16 +1,17 @@
-# Reusable Renovate job template.
-# Include this file and extend .renovate to add Renovate to any project.
+# Reusable acc-py-maintenance job template.
+# Include this file and extend .acc-py-maintenance to add automated package maintenance to any project.
 #
 # Required CI variable:
 #   RENOVATE_TOKEN  - GitLab access token (PAT, project, or group token)
 #                     Scopes: api, read_repository, write_repository
 #
-# Optional CI variable:
-#   RENOVATE_AUTOMERGE  - Set to "true" to enable automerge (default: false)
-#   RENOVATE_IMAGE_TAG  - Internal renovate image tag (default: 2026.04)
-#                         See .gitlab/renovate-versions.yml for available tags.
+# Optional CI variables:
+#   RENOVATE_AUTOMERGE       - Set to "true" to enable automerge (default: false)
+#   RENOVATE_IMAGE_TAG       - Internal renovate image tag (default: 2026.04)
+#                              See .gitlab/renovate-versions.yml for available tags.
+#   MAINTENANCE_MANIFEST_URL - URL or path to deprecation manifest JSON (default: bundled)
 
-.renovate:
+.acc-py-maintenance:
   stage: .post
   image: registry.cern.ch/dsb-devtools/renovate:$RENOVATE_IMAGE_TAG
   allow_failure: true
@@ -20,7 +21,9 @@
     RENOVATE_ENDPOINT: "$CI_SERVER_URL/api/v4"
     RENOVATE_REPOSITORIES: "$CI_PROJECT_PATH"
     RENOVATE_AUTODISCOVER: "false"
+    LOG_FORMAT: json
     LOG_LEVEL: info
+    RENOVATE_LOG_FILE: renovate.log
   script:
     - |
       if [ -z "$RENOVATE_TOKEN" ]; then
@@ -28,7 +31,17 @@
         echo "Set a masked CI variable with a GitLab access token (scopes: api, read_repository, write_repository)."
         exit 1
       fi
-    - renovate
+    - renovate 2>&1 | tee $RENOVATE_LOG_FILE || true
+    - dsb-devtools maintenance run --log $RENOVATE_LOG_FILE
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
+    - when: never
+
+
+acc-py-maintenance:
+  extends: .acc-py-maintenance
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
     - when: never

@@ -206,17 +206,19 @@ def test_ensure_renovate_ci_job_entry_adds_job(tmp_path: pathlib.Path) -> None:
     _ensure_renovate_ci_job_entry(tmp_path)
 
     content = ci_path.read_text()
-    assert "\nrenovate:" in content
-    assert "extends: .renovate" in content
+    assert "\nacc-py-maintenance:" in content
+    assert "extends: .acc-py-maintenance" in content
 
 
 def test_ensure_renovate_ci_job_entry_no_duplicate(tmp_path: pathlib.Path) -> None:
     ci_path = tmp_path / ".gitlab-ci.yml"
-    ci_path.write_text("variables:\n  foo: bar\n\nrenovate:\n  extends: .renovate\n")
+    ci_path.write_text(
+        "variables:\n  foo: bar\n\nacc-py-maintenance:\n  extends: .acc-py-maintenance\n"
+    )
 
     _ensure_renovate_ci_job_entry(tmp_path)
 
-    assert ci_path.read_text().count("renovate:") == 1
+    assert ci_path.read_text().count("acc-py-maintenance:") == 1
 
 
 def test_ensure_renovate_ci_job_entry_missing_ci(tmp_path: pathlib.Path) -> None:
@@ -242,8 +244,8 @@ def test_ensure_renovate_ci_job_writes_template_and_include(
     content = ci_path.read_text()
     assert (tmp_path / ".gitlab" / "renovate.gitlab-ci.yml").exists()
     assert "local: .gitlab/renovate.gitlab-ci.yml" in content
-    assert "renovate:" in content
-    assert "extends: .renovate" in content
+    assert "acc-py-maintenance:" in content
+    assert "extends: .acc-py-maintenance" in content
 
 
 # --- CLI parser ---
