@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import datetime
+import importlib.resources
 import pathlib
 from unittest.mock import patch
 
 from dsb_devtools.maintenance._manifest import load_manifest
 from dsb_devtools.maintenance._types import Manifest
 
-BUNDLED = (
-    pathlib.Path(__file__).parents[1] / "dsb_devtools" / "maintenance" / "manifest.json"
+BUNDLED = pathlib.Path(
+    str(importlib.resources.files("dsb_devtools.maintenance").joinpath("manifest.json"))
 )
 
 
