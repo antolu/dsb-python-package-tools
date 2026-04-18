@@ -31,11 +31,21 @@ def write(path, data):
 
 def get(path, key):
     d = read(path)
-    val = d.get(key)
-    print(val if val is not None else "")
+    # match regardless of quoting style
+    for k, v in d.items():
+        if str(k) == str(key):
+            print(v)
+            return
+    print("")
 
 def set_(path, key, value):
     d = read(path)
+    # update in-place if key exists (regardless of quoting), otherwise append
+    for k in list(d.keys()):
+        if str(k) == str(key):
+            d[k] = value
+            write(path, d)
+            return
     d[key] = value
     write(path, d)
 
