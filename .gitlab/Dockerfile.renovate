@@ -12,17 +12,20 @@ RUN curl -sS "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certifi
       -o /usr/local/share/ca-certificates/cern-int.crt \
  && update-ca-certificates
 
-# The slim renovate image does not ship pip or ensurepip. Install via apt-get so
-# we can install dsb-devtools (and its dependencies) from the Acc-Py index below.
+# The slim renovate image does not ship pip or ensurepip. Install via apt-get.
 # Use the slim (unversioned-suffix) image, NOT -full — -full is much larger and unnecessary.
 RUN apt-get update && apt-get install -y --no-install-recommends python3-pip && rm -rf /var/lib/apt/lists/*
 
+# Install dsb-devtools from the local source tree (build context = repo root).
+# This avoids the chicken-and-egg problem of needing a released package before
+# building the image — the image always contains exactly what's in the repo.
+COPY . /tmp/dsb-devtools
 RUN pip install \
       --break-system-packages \
       --index-url https://acc-py-repo.cern.ch/repository/vr-py-releases/simple/ \
       --extra-index-url https://pypi.org/simple/ \
       --trusted-host acc-py-repo.cern.ch \
-      dsb-devtools
+      /tmp/dsb-devtools
 
 USER 12021
 
